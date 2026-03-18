@@ -23,16 +23,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val requestPermissions = listOf(Manifest.permission.CAMERA)
-        val isAllGranted = requestPermissions.all {
-            baseContext.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED
-        }
         val registeredItems = RegisteredItems()
         setContent {
             ScannerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     PermissionDock(
                         requestPermissions,
-                        isAllGranted,
                         modifier = Modifier.padding(innerPadding),
                         {
                             Text("Not Granted")
