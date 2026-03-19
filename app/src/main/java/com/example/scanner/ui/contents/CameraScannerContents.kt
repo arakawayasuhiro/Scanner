@@ -16,13 +16,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanner.repository.ScanMode
 import com.example.scanner.ui.DetectedItem
-import com.example.scanner.ui.ScanMode
 import com.example.scanner.ui.ScannerViewModel
 import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
-fun CameraScanner(modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
+fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
     val request by viewModel.surfaceRequest.collectAsStateWithLifecycle()
     val previewWeight = 1f
     val listWeight = 0.3f
@@ -62,12 +62,12 @@ fun CameraScanner(modifier: Modifier = Modifier, viewModel: ScannerViewModel = S
 
 @Preview(showBackground = true, widthDp = 240, heightDp = 480)
 @Composable
-fun CameraScannerPreview() {
+fun CameraScannerContentsPreview() {
     val viewModel = ScannerViewModel()
     viewModel.detectedItems.add(DetectedItem("AAA", Rect(0f, 0f, 100f, 100f), 1))
     viewModel.detectedItems.add(DetectedItem("BBB", Rect(0f, 0f, 100f, 100f), 1))
     viewModel.detectedItems.add(DetectedItem("CCC", Rect(0f, 0f, 100f, 100f), 1))
     ScannerTheme {
-        CameraScanner(viewModel = viewModel)
+        CameraScannerContents(viewModel = viewModel)
     }
 }

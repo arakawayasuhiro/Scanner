@@ -27,7 +27,7 @@ fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifi
         if (isList) {
             RegisteredItemsContents(registeredItems.items, Modifier.weight(1f))
         } else {
-            CameraScanner(Modifier.weight(1f))
+            CameraScannerContents(Modifier.weight(1f))
         }
         Row(Modifier.align(Alignment.CenterHorizontally)) {
             Button(onClick = { isList= !isList}, Modifier.padding(4.dp)) {
