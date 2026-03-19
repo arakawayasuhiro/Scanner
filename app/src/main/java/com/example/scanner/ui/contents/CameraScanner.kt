@@ -37,8 +37,9 @@ fun CameraScanner(modifier: Modifier = Modifier, viewModel: ScannerViewModel = S
         PreviewContents(
             request,
             viewModel.liveDetection,
-            onTap = {},
-            Modifier
+            onTap = {offset-> viewModel.tapAt(offset)},
+            onZoom = {zoom-> viewModel.setZoom(zoom)},
+            modifier = Modifier
                 .padding(4.dp)
                 .weight(previewWeight)
         )

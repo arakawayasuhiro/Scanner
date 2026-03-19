@@ -1,7 +1,9 @@
 package com.example.scanner.ui
 
 import android.content.Context
+import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
@@ -26,6 +28,7 @@ enum class ScanMode {
 class DetectedItem(val text:String, val area:Rect, val count:Int)
 
 class ScannerViewModel: ViewModel() {
+    var camera: Camera? = null
     private val preview = Previewer()
     private val barcodeScanner = BarcodeScanner()
     private val textScanner = TextScanner()
@@ -37,7 +40,7 @@ class ScannerViewModel: ViewModel() {
     private suspend fun bindToCamera(context:Context, lifecycleOwner: LifecycleOwner, useCaseHolder: UseCaseHolder) {
         val provider = ProcessCameraProvider.awaitInstance(context)
         provider.unbindAll()
-        provider.bindToLifecycle(
+        camera = provider.bindToLifecycle(
             lifecycleOwner,
             CameraSelector.DEFAULT_BACK_CAMERA,
             preview.useCase,
@@ -62,7 +65,7 @@ class ScannerViewModel: ViewModel() {
             }
         }
     }
-    fun toggleScanMode(context: Context, lifecycleOwner: LifecycleOwner):Unit {
+    fun toggleScanMode(context: Context, lifecycleOwner: LifecycleOwner) {
         if (_scanMode == ScanMode.Barcode) {
             viewModelScope.launch {
                 startScanText(context, lifecycleOwner)
@@ -75,10 +78,22 @@ class ScannerViewModel: ViewModel() {
     }
 
     fun tapAt(offset: Offset) {
+        camera?.cameraControl?.run {
+            val point = preview.surfaceOffsetToSensor(offset)
+            point?.let {
+                val meteringAction = FocusMeteringAction.Builder(it).build()
+                startFocusAndMetering(meteringAction)
+            }
+        }
 
+        // TODO: set POI to Scanner
     }
 
     fun setZoom(zoom: Float) {
-
+        camera?.run {
+            cameraInfo.zoomState.value?.let {zoomState->
+                cameraControl.setZoomRatio(zoomState.zoomRatio * zoom)
+            }
+        }
     }
 }
