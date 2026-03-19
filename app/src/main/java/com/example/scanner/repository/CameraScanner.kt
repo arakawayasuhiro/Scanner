@@ -13,10 +13,7 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.compose.ui.geometry.Offset
-import com.example.scanner.usecaseholder.ImageScanner
-import com.example.scanner.usecaseholder.Previewer
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.Executors
 
 enum class ScanMode {
