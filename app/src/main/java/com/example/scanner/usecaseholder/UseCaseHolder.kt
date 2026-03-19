@@ -2,6 +2,6 @@ package com.example.scanner.usecaseholder
 
 import androidx.camera.core.UseCase
 
-interface UsecaseHolder {
+interface UseCaseHolder {
     abstract val useCase: UseCase
 }

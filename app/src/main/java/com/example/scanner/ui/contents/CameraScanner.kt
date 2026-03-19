@@ -6,11 +6,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.scanner.ui.DetectedItem
 import com.example.scanner.ui.ScanMode
@@ -22,7 +26,13 @@ fun CameraScanner(modifier: Modifier = Modifier, viewModel: ScannerViewModel = S
     val request by viewModel.surfaceRequest.collectAsStateWithLifecycle()
     val previewWeight = 1f
     val listWeight = 0.3f
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+    LaunchedEffect(lifecycleOwner) {
+        viewModel.startScan(context, lifecycleOwner)
+    }
 
+    val scanMode = remember {viewModel.scanMode}
     Column(modifier.padding(4.dp)) {
         PreviewContents(
             request,
@@ -32,14 +42,15 @@ fun CameraScanner(modifier: Modifier = Modifier, viewModel: ScannerViewModel = S
                 .padding(4.dp)
                 .weight(previewWeight)
         )
-        if (viewModel.scanMode == ScanMode.Barcode) {
+        if (scanMode == ScanMode.Barcode) {
             BarcodeDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
         } else {
             TextDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
         }
         Row(Modifier.padding(4.dp)) {
-            Button(onClick = {}, Modifier.padding(4.dp)) {
-                Text("Scan Text")
+            Button(onClick = {viewModel.toggleScanMode(context, lifecycleOwner)}, Modifier.padding(4.dp)) {
+                val text = if (scanMode == ScanMode.Barcode) "Scan Text" else "Scan Barcode"
+                Text(text)
             }
             Button(onClick = {}, Modifier.padding(4.dp)) {
                 Text("List")
