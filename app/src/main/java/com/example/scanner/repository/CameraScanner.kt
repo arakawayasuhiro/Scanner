@@ -5,15 +5,19 @@ import android.content.Context
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.ImageAnalysis
+import androidx.camera.core.MeteringPoint
+import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.compose.ui.geometry.Offset
-import com.example.scanner.usecaseholder.BarcodeScanner
+import com.example.scanner.usecaseholder.ImageScanner
 import com.example.scanner.usecaseholder.Previewer
-import com.example.scanner.usecaseholder.TextScanner
-import com.example.scanner.usecaseholder.UseCaseHolder
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.util.concurrent.Executors
 
 enum class ScanMode {
     Barcode,
@@ -22,53 +26,66 @@ enum class ScanMode {
 
 class CameraScanner {
     private var _scanMode:ScanMode = ScanMode.Barcode
-        val scanMode: ScanMode get() = _scanMode
+    val scanMode: ScanMode get() = _scanMode
 
-    private val preview = Previewer()
-    private val barcodeScanner = BarcodeScanner()
-    private val textScanner = TextScanner()
+    private var meteringPointFactory: SurfaceOrientedMeteringPointFactory? = null
+    val surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+
+    private val preview = Preview.Builder().build().apply {
+        setSurfaceProvider {request ->
+            surfaceRequest.value = request
+            request.resolution.run {
+                meteringPointFactory = SurfaceOrientedMeteringPointFactory(
+                    width.toFloat(),
+                    height.toFloat()
+                )
+            }
+        }
+    }
+
+    private val imageScanner = ImageAnalysis.Builder().build()
 
     var camera: Camera? = null
-    val surfaceRequest: StateFlow<SurfaceRequest?> = preview.surfaceRequest
 
-    private suspend fun bindToCamera(context:Context, lifecycleOwner: LifecycleOwner, useCaseHolder: UseCaseHolder) {
+    suspend fun bindToCamera(context:Context, lifecycleOwner: LifecycleOwner) {
         val provider = ProcessCameraProvider.awaitInstance(context)
         provider.unbindAll()
         camera = provider.bindToLifecycle(
             lifecycleOwner,
             CameraSelector.DEFAULT_BACK_CAMERA,
-            preview.useCase,
-            useCaseHolder.useCase
+            preview,
+            imageScanner
         )
     }
-    private suspend fun startScanBarcode(context: Context, lifecycleOwner: LifecycleOwner) {
+    fun startScanBarcode() {
         _scanMode = ScanMode.Barcode
-        bindToCamera(context, lifecycleOwner, barcodeScanner)
+        imageScanner.setAnalyzer(Executors.newSingleThreadExecutor()) {
+
+        }
     }
 
-    private suspend fun startScanText(context: Context, lifecycleOwner: LifecycleOwner) {
+    fun startScanText() {
         _scanMode = ScanMode.Text
-        bindToCamera(context, lifecycleOwner, textScanner)
     }
     suspend fun startScan(context:Context, lifecycleOwner: LifecycleOwner) {
-        if (_scanMode == ScanMode.Barcode) {
-            startScanBarcode(context, lifecycleOwner)
-        } else {
-            startScanText(context, lifecycleOwner)
-        }
+        bindToCamera(context, lifecycleOwner)
+        startScanBarcode()
     }
 
-    suspend fun toggleScanMode(context:Context, lifecycleOwner: LifecycleOwner) {
+    fun toggleScanMode() {
         if (_scanMode == ScanMode.Barcode) {
-            startScanText(context, lifecycleOwner)
+            startScanText()
         } else {
-            startScanBarcode(context, lifecycleOwner)
+            startScanBarcode()
         }
+    }
+    private fun surfaceOffsetToSensor(offset: Offset) : MeteringPoint? {
+        return meteringPointFactory?.createPoint(offset.x, offset.y)
     }
 
     fun tapAt(offset: Offset) {
         camera?.cameraControl?.run {
-            val point = preview.surfaceOffsetToSensor(offset)
+            val point = surfaceOffsetToSensor(offset)
             point?.let {
                 val meteringAction = FocusMeteringAction.Builder(it).build()
                 startFocusAndMetering(meteringAction)

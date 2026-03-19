@@ -26,9 +26,7 @@ class ScannerViewModel: ViewModel() {
         }
     }
     fun toggleScanMode(context: Context, lifecycleOwner: LifecycleOwner) {
-        viewModelScope.launch {
-            cameraSanner.toggleScanMode(context, lifecycleOwner)
-        }
+        cameraSanner.toggleScanMode()
     }
 
     fun tapAt(offset: Offset) {
