@@ -24,7 +24,7 @@ fun PreviewContents(
     onZoom: (zoomRate:Float)->Unit,
     modifier: Modifier = Modifier){
     if (surfaceRequest != null) {
-        var coordinateTransformer = remember { MutableCoordinateTransformer() }
+        val coordinateTransformer = remember { MutableCoordinateTransformer() }
         CameraXViewfinder(
             surfaceRequest = surfaceRequest,
             coordinateTransformer = coordinateTransformer,
@@ -34,7 +34,7 @@ fun PreviewContents(
                         val sensorOffset = with(coordinateTransformer) {
                             offset.transform()
                         }
-                        onTap(offset)
+                        onTap(sensorOffset)
                     }
                 }
                 .pointerInput(onZoom) {
