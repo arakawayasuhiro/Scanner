@@ -49,7 +49,7 @@ fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewM
             TextDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
         }
         Row(Modifier.padding(4.dp)) {
-            Button(onClick = {viewModel.toggleScanMode(context, lifecycleOwner)}, Modifier.padding(4.dp)) {
+            Button(onClick = {viewModel.toggleScanMode()}, Modifier.padding(4.dp)) {
                 val text = if (scanMode == ScanMode.Barcode) "Scan Text" else "Scan Barcode"
                 Text(text)
             }

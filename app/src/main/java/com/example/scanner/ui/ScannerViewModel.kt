@@ -27,7 +27,7 @@ class ScannerViewModel: ViewModel() {
             cameraSanner.startScan(context, lifecycleOwner)
         }
     }
-    fun toggleScanMode(context: Context, lifecycleOwner: LifecycleOwner) {
+    fun toggleScanMode() {
         cameraSanner.toggleScanMode()
     }
 
