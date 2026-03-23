@@ -11,7 +11,7 @@ import com.example.scanner.ui.DetectedItem
 fun BarcodeDetectContents(detected:List<DetectedItem>, modifier: Modifier = Modifier) {
     LazyColumn(modifier)  {
         items(items = detected, key = {item-> item.text}) {item->
-            Text("detected: ${item.text}")
+              Text("detected: ${item.text}")
         }
     }
 }

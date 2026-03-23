@@ -2,8 +2,10 @@ package com.example.scanner.repository
 
 import androidx.lifecycle.LifecycleOwner
 import android.content.Context
+import androidx.annotation.OptIn
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.MeteringPoint
@@ -13,6 +15,13 @@ import androidx.camera.core.SurfaceRequest
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.setFrom
+import androidx.core.graphics.toRectF
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.common.InputImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.Executors
 
@@ -21,10 +30,12 @@ enum class ScanMode {
     Text
 }
 
+class DetectResult(val text:String, val area: Rect?)
+
 class CameraScanner {
     private var _scanMode:ScanMode = ScanMode.Barcode
     val scanMode: ScanMode get() = _scanMode
-
+    val detectResult = MutableStateFlow<List<DetectResult>>(listOf<DetectResult>())
     private var meteringPointFactory: SurfaceOrientedMeteringPointFactory? = null
     val surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -54,10 +65,52 @@ class CameraScanner {
             imageScanner
         )
     }
+
+    fun Matrix.map(rect:android.graphics.Rect?):Rect? {
+        return rect?.run {
+            map(
+                Rect(
+                    left = left.toFloat(),
+                    top = top.toFloat(),
+                    right = right.toFloat(),
+                    bottom = bottom.toFloat()
+                )
+            )
+        }
+    }
     fun startScanBarcode() {
         _scanMode = ScanMode.Barcode
-        imageScanner.setAnalyzer(Executors.newSingleThreadExecutor()) {
-
+        imageScanner.setAnalyzer(Executors.newSingleThreadExecutor()) {imageProxy ->
+            val options = BarcodeScannerOptions.Builder()
+                .enableAllPotentialBarcodes()
+                .build()
+            var imageToSensorMatrix = Matrix().apply {
+                setFrom(imageProxy.imageInfo.sensorToBufferTransformMatrix)
+                invert()
+            }
+            val inputImage =
+                InputImage.fromBitmap(imageProxy.toBitmap(), 0)
+            val scanner = BarcodeScanning.getClient(options)
+            val result = scanner.process(inputImage)
+            result.run {
+                addOnSuccessListener { barcodes ->
+                    var detected = mutableListOf<DetectResult>()
+                    for (barcode in barcodes) {
+                        barcode.displayValue?.let { code ->
+                            if (!code.isEmpty()) {
+                                detected.add(DetectResult(
+                                    text = code,
+                                    area = imageToSensorMatrix.map(barcode.boundingBox)
+                                ))
+                            }
+                        }
+                    }
+                    detectResult.value = detected
+                }
+                addOnCompleteListener {
+                    imageProxy.close()
+                }
+            }
         }
     }
 
