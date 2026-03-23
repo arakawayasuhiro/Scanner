@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +32,7 @@ fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewM
         viewModel.startScan(context, lifecycleOwner)
     }
 
-    val scanMode = remember {viewModel.scanMode}
+    val scanMode = viewModel.scanMode.observeAsState()
     Column(modifier.padding(4.dp)) {
         PreviewContents(
             request,
@@ -43,14 +43,14 @@ fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewM
                 .padding(4.dp)
                 .weight(previewWeight)
         )
-        if (scanMode == ScanMode.Barcode) {
+        if (scanMode.value == ScanMode.Barcode) {
             BarcodeDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
         } else {
             TextDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
         }
         Row(Modifier.padding(4.dp)) {
             Button(onClick = {viewModel.toggleScanMode()}, Modifier.padding(4.dp)) {
-                val text = if (scanMode == ScanMode.Barcode) "Scan Text" else "Scan Barcode"
+                val text = if (scanMode.value == ScanMode.Barcode) "Scan Text" else "Scan Barcode"
                 Text(text)
             }
             Button(onClick = {}, Modifier.padding(4.dp)) {

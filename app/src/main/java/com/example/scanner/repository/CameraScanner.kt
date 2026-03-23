@@ -16,9 +16,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.setFrom
+import androidx.lifecycle.MutableLiveData
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.util.concurrent.Executors
 
@@ -30,9 +33,8 @@ enum class ScanMode {
 class DetectResult(val text:String, val area: Rect?)
 
 class CameraScanner {
-    private var _scanMode:ScanMode = ScanMode.Barcode
-    val scanMode: ScanMode get() = _scanMode
-    val detectResult = MutableStateFlow<List<DetectResult>>(listOf<DetectResult>())
+    val scanMode = MutableLiveData<ScanMode>()
+    val detectResult = MutableStateFlow(listOf<DetectResult>())
     private var meteringPointFactory: SurfaceOrientedMeteringPointFactory? = null
     val surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
 
@@ -76,7 +78,7 @@ class CameraScanner {
         }
     }
     fun startScanBarcode() {
-        _scanMode = ScanMode.Barcode
+        scanMode.value = ScanMode.Barcode
         imageScanner.setAnalyzer(Executors.newSingleThreadExecutor()) {imageProxy ->
             val options = BarcodeScannerOptions.Builder()
                 .enableAllPotentialBarcodes()
@@ -112,7 +114,31 @@ class CameraScanner {
     }
 
     fun startScanText() {
-        _scanMode = ScanMode.Text
+        scanMode.value = ScanMode.Text
+        imageScanner.setAnalyzer(Executors.newSingleThreadExecutor()) {imageProxy ->
+            val imageToSensorMatrix = Matrix().apply {
+                setFrom(imageProxy.imageInfo.sensorToBufferTransformMatrix)
+                invert()
+            }
+            val inputImage =
+                InputImage.fromBitmap(imageProxy.toBitmap(), 0)
+            val recognizer = TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
+            val result = recognizer.process(inputImage)
+            result
+                .addOnSuccessListener {text ->
+                    val detected = mutableListOf<DetectResult>()
+                    for(block in text.textBlocks) {
+                        detected.add(DetectResult(
+                            text = block.text,
+                            area = imageToSensorMatrix.map(block.boundingBox)
+                        ))
+                    }
+                    detectResult.value = detected
+                }
+                .addOnCompleteListener {
+                    imageProxy.close()
+                }
+        }
     }
     suspend fun startScan(context:Context, lifecycleOwner: LifecycleOwner) {
         bindToCamera(context, lifecycleOwner)
@@ -120,7 +146,7 @@ class CameraScanner {
     }
 
     fun toggleScanMode() {
-        if (_scanMode == ScanMode.Barcode) {
+        if (scanMode.value == ScanMode.Barcode) {
             startScanText()
         } else {
             startScanBarcode()

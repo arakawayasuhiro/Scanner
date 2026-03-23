@@ -17,17 +17,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.repository.RegisteredItems
+import com.example.scanner.ui.ScannerViewModel
 import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
 fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifier: Modifier = Modifier) {
     var isList by remember{ mutableStateOf(initialIsList) }
-
+    val viewModel = ScannerViewModel()
     Column(modifier = modifier.fillMaxWidth()) {
         if (isList) {
             RegisteredItemsContents(registeredItems.items, Modifier.weight(1f))
         } else {
-            CameraScannerContents(Modifier.weight(1f))
+            CameraScannerContents(Modifier.weight(1f), viewModel)
         }
         Row(Modifier.align(Alignment.CenterHorizontally)) {
             Button(onClick = { isList= !isList}, Modifier.padding(4.dp)) {
