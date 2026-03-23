@@ -2,10 +2,8 @@ package com.example.scanner.repository
 
 import androidx.lifecycle.LifecycleOwner
 import android.content.Context
-import androidx.annotation.OptIn
 import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.MeteringPoint
@@ -18,7 +16,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.setFrom
-import androidx.core.graphics.toRectF
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
@@ -84,7 +81,7 @@ class CameraScanner {
             val options = BarcodeScannerOptions.Builder()
                 .enableAllPotentialBarcodes()
                 .build()
-            var imageToSensorMatrix = Matrix().apply {
+            val imageToSensorMatrix = Matrix().apply {
                 setFrom(imageProxy.imageInfo.sensorToBufferTransformMatrix)
                 invert()
             }
@@ -94,7 +91,7 @@ class CameraScanner {
             val result = scanner.process(inputImage)
             result.run {
                 addOnSuccessListener { barcodes ->
-                    var detected = mutableListOf<DetectResult>()
+                    val detected = mutableListOf<DetectResult>()
                     for (barcode in barcodes) {
                         barcode.displayValue?.let { code ->
                             if (!code.isEmpty()) {
