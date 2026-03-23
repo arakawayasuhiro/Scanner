@@ -15,19 +15,19 @@ import kotlinx.coroutines.launch
 class DetectedItem(val text:String, var area:Rect?, var count:Int)
 
 class ScannerViewModel: ViewModel() {
-    private val cameraSanner = CameraScanner()
+    private val cameraScanner = CameraScanner()
     private val reportedItems = mutableStateListOf<DetectedItem>()
     val detectedItems = mutableStateListOf<DetectedItem>()
     val liveDetection = mutableStateListOf<DetectedItem>()
 
-    var scanMode = cameraSanner.scanMode
-    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraSanner.surfaceRequest
+    var scanMode = cameraScanner.scanMode
+    val surfaceRequest: StateFlow<SurfaceRequest?> = cameraScanner.surfaceRequest
 
     fun startScan(context: Context, lifecycleOwner: LifecycleOwner) {
         reportedItems.clear()
         viewModelScope.launch {
-            cameraSanner.startScan(context, lifecycleOwner)
-            cameraSanner.detectResult.collect {detected->
+            cameraScanner.startScan(context, lifecycleOwner)
+            cameraScanner.detectResult.collect { detected->
                 liveDetection.clear()
                 for(detect in detected){
                     liveDetection.add(DetectedItem(detect.text, detect.area, 1))
@@ -48,14 +48,14 @@ class ScannerViewModel: ViewModel() {
         }
     }
     fun toggleScanMode() {
-        cameraSanner.toggleScanMode()
+        cameraScanner.toggleScanMode()
     }
 
     fun tapAt(offset: Offset) {
-        cameraSanner.tapAt(offset)
+        cameraScanner.tapAt(offset)
     }
 
     fun setZoom(zoom: Float) {
-        cameraSanner.setZoom(zoom)
+        cameraScanner.setZoom(zoom)
     }
 }
