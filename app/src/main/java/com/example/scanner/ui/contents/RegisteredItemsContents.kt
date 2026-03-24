@@ -1,5 +1,7 @@
 package com.example.scanner.ui.contents
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -14,40 +16,34 @@ import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
-fun RegisteredItemsContents(registeredItems: List<RegisteredItem>, modifier: Modifier = Modifier) {
+fun RegisteredItemsContents(registeredItems: List<RegisteredItem>, onRequest:(RegisteredItem?, RegisteredItem.PropertyType)-> Unit, modifier: Modifier = Modifier) {
     LazyColumn(modifier) {
         items(items = registeredItems) {item->
-            ItemRow(item, Modifier)
+            ItemRow(item, {properyType-> onRequest(item, properyType)},  Modifier)
         }
     }
 }
 
 @Composable
-fun ItemRow(item: RegisteredItem, modifier: Modifier = Modifier){
+fun ItemRow(item: RegisteredItem, onRequest:(RegisteredItem.PropertyType)->Unit, modifier: Modifier = Modifier){
     Column(modifier) {
-        item.barcode?.let{
-            ItemDetailRow("Barcode", it)
-        }
-        item.manufacturer?.let{
-            ItemDetailRow("Manufacturer", it)
-        }
-        item.series?.let{
-            ItemDetailRow("Series", it)
-        }
-        item.category?.let{
-            ItemDetailRow("category", it)
-        }
-        item.name?.let{
-            ItemDetailRow("name", it)
-        }
+        ItemDetailRow(RegisteredItem.PropertyType.Barcode, item.barcode, {onRequest(RegisteredItem.PropertyType.Barcode)})
+        ItemDetailRow(RegisteredItem.PropertyType.Manufacturer, item.manufacturer, {onRequest(RegisteredItem.PropertyType.Manufacturer)})
+        ItemDetailRow(RegisteredItem.PropertyType.Series, item.series, {onRequest(RegisteredItem.PropertyType.Series)})
+        ItemDetailRow(RegisteredItem.PropertyType.Category, item.category, {onRequest(RegisteredItem.PropertyType.Category)})
+        ItemDetailRow(RegisteredItem.PropertyType.Name, item.name, { onRequest(RegisteredItem.PropertyType.Name)})
     }
 }
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ItemDetailRow(label:String, value:String, modifier: Modifier = Modifier) {
-    Row(modifier) {
-        Text(label, Modifier.weight(1f))
+fun ItemDetailRow(propertyType: RegisteredItem.PropertyType, value:String?, onRequest:()->Unit, modifier: Modifier = Modifier) {
+    Row(modifier
+        .combinedClickable(
+            onLongClick = {onRequest()}
+        ){}) {
+        Text(RegisteredItem.getPropertyLabel(propertyType), Modifier.weight(1f))
         Text(":", modifier.padding(horizontal = 8.dp))
-        Text(value, Modifier.weight(1.5f))
+        Text(value?:"---", Modifier.weight(1.5f))
     }
 }
 
@@ -61,7 +57,7 @@ fun RegisteredItemsContentsPreview() {
         RegisteredItem("8882223332081", "Vallejo", "Model Air", "", "78.0001"),
         RegisteredItem("8882223332081", "Vallejo", "Model Color", "", "79.0001"),
     )
-    ScannerTheme() {
-        RegisteredItemsContents(items)
+    ScannerTheme {
+        RegisteredItemsContents(items, onRequest = {_, _->})
     }
 }

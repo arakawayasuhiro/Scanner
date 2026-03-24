@@ -1,5 +1,7 @@
 package com.example.scanner.ui.contents
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
@@ -7,11 +9,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.example.scanner.ui.DetectedItem
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun BarcodeDetectContents(detected:List<DetectedItem>, modifier: Modifier = Modifier) {
+fun BarcodeDetectContents(
+    detected:List<DetectedItem>,
+    onSelect:(String)->Unit,
+    modifier: Modifier = Modifier) {
     LazyColumn(modifier)  {
         items(items = detected, key = {item-> item.text}) {item->
-              Text("detected: ${item.text}")
+              Text("detected: ${item.text}",
+                  Modifier.combinedClickable(
+                      onLongClick = {onSelect(item.text)}
+                  ){})
         }
     }
 }

@@ -16,20 +16,28 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.repository.ScanMode
 import com.example.scanner.ui.DetectedItem
 import com.example.scanner.ui.ScannerViewModel
 import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
-fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
+fun CameraScannerContents(
+    requestPropertyType: RegisteredItem.PropertyType,
+    onSelectBarcode:(String) -> Unit,
+    onSelectText:(String)-> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: ScannerViewModel = ScannerViewModel()) {
+
     val request by viewModel.surfaceRequest.collectAsStateWithLifecycle()
-  val previewWeight = 1f
+    val previewWeight = 1f
     val listWeight = 0.2f
+
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     LaunchedEffect(lifecycleOwner) {
-        viewModel.startScan(context, lifecycleOwner)
+        viewModel.startScan(context, lifecycleOwner, if (requestPropertyType == RegisteredItem.PropertyType.Barcode) ScanMode.Barcode else ScanMode.Text)
     }
 
     val scanMode = viewModel.scanMode.observeAsState()
@@ -44,9 +52,9 @@ fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewM
                 .weight(previewWeight)
         )
         if (scanMode.value == ScanMode.Barcode) {
-            BarcodeDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
+            BarcodeDetectContents(viewModel.detectedItems, onSelect = {text-> onSelectBarcode(text)}, Modifier.weight(listWeight))
         } else {
-            TextDetectContents(viewModel.detectedItems, Modifier.weight(listWeight))
+            TextDetectContents(viewModel.detectedItems, onSelect = {text-> onSelectText(text)},  Modifier.weight(listWeight))
         }
         Row(Modifier.padding(4.dp)) {
             Button(onClick = {viewModel.toggleScanMode()}, Modifier.padding(4.dp)) {
@@ -68,6 +76,6 @@ fun CameraScannerContentsPreview() {
     viewModel.detectedItems.add(DetectedItem("BBB", Rect(0f, 0f, 100f, 100f), 1))
     viewModel.detectedItems.add(DetectedItem("CCC", Rect(0f, 0f, 100f, 100f), 1))
     ScannerTheme {
-        CameraScannerContents(viewModel = viewModel)
+        CameraScannerContents(RegisteredItem.PropertyType.Barcode, {}, {}, viewModel = viewModel)
     }
 }

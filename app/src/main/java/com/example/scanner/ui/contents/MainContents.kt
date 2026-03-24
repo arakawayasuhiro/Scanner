@@ -21,20 +21,38 @@ import com.example.scanner.ui.ScannerViewModel
 import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
-fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifier: Modifier = Modifier) {
-    var isList by remember{ mutableStateOf(initialIsList) }
-    val viewModel = ScannerViewModel()
+fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
+    var isList by remember { mutableStateOf(initialIsList) }
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (isList) {
-            RegisteredItemsContents(registeredItems.items, Modifier.weight(1f))
+            RegisteredItemsContents(
+                registeredItems.items,
+                onRequest = {item, propertyType->
+                    registeredItems.targetItem = item
+                    registeredItems.requestPropertyType = propertyType
+                    isList = false
+                },
+                Modifier.weight(1f))
         } else {
-            CameraScannerContents(Modifier.weight(1f), viewModel)
+            CameraScannerContents(
+                registeredItems.requestPropertyType,
+                onSelectBarcode = {text->
+                    registeredItems.setProperty(RegisteredItem.PropertyType.Barcode, text)
+                    isList = true
+                },
+                onSelectText = {text->
+                    registeredItems.setProperty(text)
+
+                    isList = true
+                },
+                Modifier.weight(1f), viewModel)
         }
         Row(Modifier.align(Alignment.CenterHorizontally)) {
-            Button(onClick = { isList= !isList}, Modifier.padding(4.dp)) {
+            Button(onClick = { isList= false}, Modifier.padding(4.dp)) {
                 Text("Scan")
             }
-            Button(onClick = {isList = !isList}, Modifier.padding(4.dp)) {
+            Button(onClick = {isList = true}, Modifier.padding(4.dp)) {
                 Text("List")
             }
         }

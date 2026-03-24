@@ -141,9 +141,13 @@ class CameraScanner {
                 }
         }
     }
-    suspend fun startScan(context:Context, lifecycleOwner: LifecycleOwner) {
+    suspend fun startScan(context:Context, lifecycleOwner: LifecycleOwner, initialScanMode: ScanMode) {
         bindToCamera(context, lifecycleOwner)
-        startScanBarcode()
+        if (initialScanMode == ScanMode.Barcode) {
+            startScanBarcode()
+        } else {
+            startScanText()
+        }
     }
 
     fun toggleScanMode() {
