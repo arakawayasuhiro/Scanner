@@ -33,6 +33,7 @@ enum class ScanMode {
 class DetectResult(val text:String, val area: Rect?)
 
 class CameraScanner {
+    private constructor()
     val scanMode = MutableLiveData<ScanMode>()
     val detectResult = MutableStateFlow(listOf<DetectResult>())
     private var meteringPointFactory: SurfaceOrientedMeteringPointFactory? = null
@@ -173,6 +174,13 @@ class CameraScanner {
             cameraInfo.zoomState.value?.let {zoomState->
                 cameraControl.setZoomRatio(zoomState.zoomRatio * zoom)
             }
+        }
+    }
+
+    companion object {
+        private val theInstance = CameraScanner()
+        fun getInstane(): CameraScanner {
+            return theInstance
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.scanner.ui
 
 import android.content.Context
+import android.util.Log
 import androidx.camera.core.SurfaceRequest
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.geometry.Offset
@@ -15,7 +16,8 @@ import kotlinx.coroutines.launch
 class DetectedItem(val text:String, var area:Rect?, var count:Int)
 
 class ScannerViewModel: ViewModel() {
-    private val cameraScanner = CameraScanner()
+    private val TAG = "ScannerApp"
+    private val cameraScanner = CameraScanner.getInstane()
     private val reportedItems = mutableStateListOf<DetectedItem>()
     val detectedItems = mutableStateListOf<DetectedItem>()
     val liveDetection = mutableStateListOf<DetectedItem>()
@@ -37,11 +39,15 @@ class ScannerViewModel: ViewModel() {
                         item.area = detect.area
                         if (item.count > 5) {
                             if (!detectedItems.any{detect-> detect.text == item.text}) {
+                                Log.d(TAG, "add to detectedItems: '${item.text}'")
                                 detectedItems.add(item)
+                                Log.d(TAG, "detectedItems: count=${detectedItems.count()}")
                             }
                         }
                     } else {
+                        Log.d(TAG,"add to reportedItems: '${detect.text}'" )
                         reportedItems.add(DetectedItem(detect.text, detect.area, 1))
+                        Log.d(TAG, "reportedItems: count(${reportedItems.count()}), detectedItems: count(${detectedItems.count()})")
                     }
                 }
             }
@@ -51,6 +57,14 @@ class ScannerViewModel: ViewModel() {
         cameraScanner.toggleScanMode()
     }
 
+    fun resetScan() {
+        viewModelScope.launch {
+            liveDetection.clear()
+            reportedItems.clear()
+            detectedItems.clear()
+            Log.d(TAG, "resetScan: reportedItems: count(${reportedItems.count()}), detectedItems: count(${detectedItems.count()})")
+        }
+    }
     fun tapAt(offset: Offset) {
         cameraScanner.tapAt(offset)
     }

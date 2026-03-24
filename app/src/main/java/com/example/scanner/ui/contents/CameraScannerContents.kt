@@ -24,8 +24,8 @@ import com.example.scanner.ui.theme.ScannerTheme
 @Composable
 fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
     val request by viewModel.surfaceRequest.collectAsStateWithLifecycle()
-    val previewWeight = 1f
-    val listWeight = 0.3f
+  val previewWeight = 1f
+    val listWeight = 0.2f
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
     LaunchedEffect(lifecycleOwner) {
@@ -53,8 +53,8 @@ fun CameraScannerContents(modifier: Modifier = Modifier, viewModel: ScannerViewM
                 val text = if (scanMode.value == ScanMode.Barcode) "Scan Text" else "Scan Barcode"
                 Text(text)
             }
-            Button(onClick = {}, Modifier.padding(4.dp)) {
-                Text("List")
+            Button(onClick = {viewModel.resetScan()}, Modifier.padding(4.dp)) {
+                Text("Restart")
             }
         }
     }
