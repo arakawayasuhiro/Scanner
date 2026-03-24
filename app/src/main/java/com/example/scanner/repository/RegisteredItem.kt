@@ -65,4 +65,9 @@ class RegisteredItems {
     fun setProperty(value:String) {
         setProperty(requestPropertyType, value)
     }
+
+    fun startNewItem(){
+        targetItem = null
+        requestPropertyType = RegisteredItem.PropertyType.Barcode
+    }
 }

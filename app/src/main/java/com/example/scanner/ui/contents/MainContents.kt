@@ -49,8 +49,13 @@ fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifi
                 Modifier.weight(1f), viewModel)
         }
         Row(Modifier.align(Alignment.CenterHorizontally)) {
-            Button(onClick = { isList= false}, Modifier.padding(4.dp)) {
-                Text("Scan")
+            Button(
+                onClick =
+                    {
+                        isList= false
+                        registeredItems.startNewItem()
+                    }, Modifier.padding(4.dp)) {
+                Text("New Item")
             }
             Button(onClick = {isList = true}, Modifier.padding(4.dp)) {
                 Text("List")
