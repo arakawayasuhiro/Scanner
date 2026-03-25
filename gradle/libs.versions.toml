@@ -17,6 +17,8 @@ uiGraphics = "1.10.5"
 runtimeLivedata = "1.11.0-beta01"
 textRecognition = "16.0.1"
 textRecognitionJapanese = "16.0.1"
+roomRuntime = "2.8.4"
+roomCompiler = "2.8.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -42,6 +44,8 @@ androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", ve
 androidx-compose-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "textRecognition" }
 text-recognition-japanese = { group = "com.google.mlkit", name = "text-recognition-japanese", version.ref = "textRecognitionJapanese" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

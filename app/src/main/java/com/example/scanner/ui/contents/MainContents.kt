@@ -13,36 +13,35 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.repository.RegisteredItems
 import com.example.scanner.ui.ScannerViewModel
-import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
 fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
     var isList by remember { mutableStateOf(initialIsList) }
-
+    var requestPropertyType by remember {mutableStateOf<RegisteredItem.PropertyType>(RegisteredItem.PropertyType.Barcode)}
+    var targetItem by remember {mutableStateOf<RegisteredItem?>(null)}
     Column(modifier = modifier.fillMaxWidth()) {
         if (isList) {
             RegisteredItemsContents(
                 registeredItems.items,
                 onRequest = {item, propertyType->
-                    registeredItems.targetItem = item
-                    registeredItems.requestPropertyType = propertyType
+                    targetItem = item
+                    requestPropertyType = propertyType
                     isList = false
                 },
                 Modifier.weight(1f))
         } else {
             CameraScannerContents(
-                registeredItems.requestPropertyType,
+                requestPropertyType,
                 onSelectBarcode = {text->
-                    registeredItems.setProperty(RegisteredItem.PropertyType.Barcode, text)
+                    registeredItems.addItem(RegisteredItem(barcode = text))
                     isList = true
                 },
                 onSelectText = {text->
-                    registeredItems.setProperty(text)
+                    targetItem?.setProperty(requestPropertyType, text)
 
                     isList = true
                 },
@@ -53,7 +52,8 @@ fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifi
                 onClick =
                     {
                         isList= false
-                        registeredItems.startNewItem()
+                        requestPropertyType = RegisteredItem.PropertyType.Barcode
+                        targetItem = null
                     }, Modifier.padding(4.dp)) {
                 Text("New Item")
             }
@@ -61,29 +61,5 @@ fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifi
                 Text("List")
             }
         }
-    }
-}
-
-@Preview(showBackground = true, widthDp = 400, heightDp = 800,
-    name = "Show List")
-@Composable
-fun MainContentsListPreview() {
-    val items = RegisteredItems()
-    items.addItem(RegisteredItem("11111222233331051", "Creos", "Mr.Color", null, "C105"))
-    items.addItem(RegisteredItem("11111222233332011", "Creos", "Mr.Color", null, "C201"))
-    items.addItem(RegisteredItem("11111222233333071", "Creos", "Mr.Color", null, "C307"))
-    ScannerTheme {
-        MainContents(items, true)
-    }
-}@Preview(showBackground = true, widthDp = 400, heightDp = 800,
-    name = "Show List")
-@Composable
-fun MainContentsScanPreview() {
-    val items = RegisteredItems()
-    items.addItem(RegisteredItem("11111222233331051", "creos", "Mr.Color", null, "C105"))
-    items.addItem(RegisteredItem("11111222233332011", "creos", "Mr.Color", null, "C201"))
-    items.addItem(RegisteredItem("11111222233333071", "creos", "Mr.Color", null, "C307"))
-    ScannerTheme {
-        MainContents(items, false)
     }
 }

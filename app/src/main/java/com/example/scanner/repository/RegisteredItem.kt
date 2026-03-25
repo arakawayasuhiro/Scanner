@@ -6,7 +6,9 @@ class RegisteredItem(
     var series:String? = null,
     var category:String? = null,
     var name:String? = null
-    ) {
+    )
+{
+
     fun isEmpty(): Boolean {
         return barcode == null && manufacturer == null && series == null && category == null && name == null
     }
@@ -20,6 +22,7 @@ class RegisteredItem(
             PropertyType.Name -> name = value
         }
     }
+
     enum class PropertyType{
         Barcode,
         Manufacturer,
@@ -44,30 +47,11 @@ class RegisteredItem(
 class RegisteredItems {
     private val _items = mutableListOf<RegisteredItem>()
     val items:List<RegisteredItem> = _items
-    var targetItem: RegisteredItem? = null
-    var requestPropertyType = RegisteredItem.PropertyType.Barcode
     fun addItem(item: RegisteredItem):Boolean {
         if (item.isEmpty()) {
             return false
         }
         _items.add(item)
         return true
-    }
-
-    fun setProperty(propertyType: RegisteredItem.PropertyType, value:String) {
-        if (targetItem != null){
-            targetItem?.setProperty(propertyType, value)
-        } else {
-            _items.add(RegisteredItem().apply { setProperty(propertyType, value) })
-        }
-
-    }
-    fun setProperty(value:String) {
-        setProperty(requestPropertyType, value)
-    }
-
-    fun startNewItem(){
-        targetItem = null
-        requestPropertyType = RegisteredItem.PropertyType.Barcode
     }
 }

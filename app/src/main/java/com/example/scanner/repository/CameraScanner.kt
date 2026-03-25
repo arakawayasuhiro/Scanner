@@ -108,6 +108,7 @@ class CameraScanner {
                     detectResult.value = detected
                 }
                 addOnCompleteListener {
+                    Thread.sleep(100)
                     imageProxy.close()
                 }
             }
@@ -137,6 +138,7 @@ class CameraScanner {
                     detectResult.value = detected
                 }
                 .addOnCompleteListener {
+                    Thread.sleep(100)
                     imageProxy.close()
                 }
         }
