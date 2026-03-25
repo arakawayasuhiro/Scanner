@@ -34,7 +34,7 @@ class RegisteredItem(
                 PropertyType.Barcode -> "Barcode"
                 PropertyType.Manufacturer -> "Manufacturer"
                 PropertyType.Series -> "Series"
-                PropertyType.Category -> "Catetory"
+                PropertyType.Category -> "Category"
                 PropertyType.Name -> "Name"
             }
         }
