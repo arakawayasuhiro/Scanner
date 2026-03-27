@@ -37,11 +37,13 @@ fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifi
             CameraScannerContents(
                 requestPropertyType,
                 onSelectBarcode = {text->
-                    registeredItems.addItem(RegisteredItem(barcode = text))
+                    registeredItems.addItem(text)
                     isList = true
                 },
                 onSelectText = {text->
-                    targetItem?.setProperty(requestPropertyType, text)
+                    targetItem?.run {
+                        registeredItems.setItemProperty(barcode, requestPropertyType, text)
+                    }
 
                     isList = true
                 },
