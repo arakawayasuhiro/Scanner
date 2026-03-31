@@ -4,22 +4,70 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import com.example.scanner.repository.RegisteredItem
-import com.example.scanner.ui.theme.ScannerTheme
 
 @Composable
-fun RegisteredItemsContents(registeredItems: List<RegisteredItem>, onRequest:(RegisteredItem?, RegisteredItem.PropertyType)-> Unit, modifier: Modifier = Modifier) {
+fun RegisteredItemsContents(
+    registeredItems: List<RegisteredItem>,
+    onRequestScan:(RegisteredItem?, RegisteredItem.PropertyType)-> Unit,
+    onSetProperty:(RegisteredItem, RegisteredItem.PropertyType, String)->Unit,
+    onRequestSelection:(RegisteredItem, RegisteredItem.PropertyType)->Unit,
+    modifier: Modifier = Modifier) {
+    var requestProperty by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
+    var requestItem by remember {mutableStateOf<RegisteredItem?>(null)}
+
+    if (requestItem != null) {
+        SelectActionDialog(
+            onClose =
+                {
+                    requestItem = null
+                },
+            onRequestScan =
+                {
+                    onRequestScan(requestItem, requestProperty)
+                    requestItem = null
+                },
+            onSelectText =
+                {newValue->
+                    onSetProperty(requestItem!!, requestProperty, newValue)
+                    requestItem = null
+                },
+            onRequestSelection =
+                {
+                    onRequestSelection(requestItem!!, requestProperty)
+                    requestItem = null
+                },
+        )
+    }
+
     LazyColumn(modifier) {
-        items(items = registeredItems) {item->
-            ItemRow(item, {properyType-> onRequest(item, properyType)},  Modifier)
+        items(items = registeredItems, key = {item-> item.barcode}) { item->
+            ItemRow(
+                item,
+                { properyType->
+                    requestProperty = properyType
+                    requestItem = item
+                },
+                Modifier)
         }
     }
 }
@@ -47,17 +95,34 @@ fun ItemDetailRow(propertyType: RegisteredItem.PropertyType, value:String?, onRe
     }
 }
 
-@Preview(showBackground = false, widthDp = 400, heightDp = 800)
 @Composable
-fun RegisteredItemsContentsPreview() {
-    val items = listOf(
-        RegisteredItem("1112223331051", "Creos", "Mr.color", "", "C105"),
-        RegisteredItem("1112223333011", "Creos", "Mr.color", "", "C301"),
-        RegisteredItem("1112223332081", "Creos", "Mr.color", "", "C208"),
-        RegisteredItem("8882223332081", "Vallejo", "Model Air", "", "78.0001"),
-        RegisteredItem("8882223332081", "Vallejo", "Model Color", "", "79.0001"),
-    )
-    ScannerTheme {
-        RegisteredItemsContents(items, onRequest = {_, _->})
+fun SelectActionDialog(
+    onClose:()->Unit,
+    onRequestScan:()->Unit,
+    onSelectText:(String)->Unit,
+    onRequestSelection:()->Unit
+    ) {
+    Dialog(onDismissRequest = { onClose() }){
+        Card(modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            var valueText by remember {mutableStateOf("")}
+            Column() {
+                Button({ onRequestScan() }, Modifier.align(alignment = Alignment.End)) {
+                    Text("Scan")
+                }
+                HorizontalDivider(Modifier.padding(8.dp), thickness = 2.dp)
+                TextField(valueText, onValueChange = {newText-> valueText = newText}, Modifier.padding(horizontal = 4.dp).fillMaxWidth())
+                Button({ onSelectText(valueText) }, Modifier.align(alignment = Alignment.End)) {
+                    Text("Assign Text")
+                }
+                HorizontalDivider(Modifier.padding(8.dp), thickness = 2.dp)
+                Button({ onRequestSelection() }, Modifier.align(alignment = Alignment.End)) {
+                    Text("Select from list")
+                }
+            }
+        }
     }
 }

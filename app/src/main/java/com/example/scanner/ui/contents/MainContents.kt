@@ -21,16 +21,22 @@ import com.example.scanner.ui.ScannerViewModel
 @Composable
 fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
     var isList by remember { mutableStateOf(initialIsList) }
-    var requestPropertyType by remember {mutableStateOf<RegisteredItem.PropertyType>(RegisteredItem.PropertyType.Barcode)}
+    var requestPropertyType by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
     var targetItem by remember {mutableStateOf<RegisteredItem?>(null)}
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (isList) {
             RegisteredItemsContents(
                 registeredItems.items,
-                onRequest = {item, propertyType->
+                onRequestScan = { item, propertyType->
                     targetItem = item
                     requestPropertyType = propertyType
                     isList = false
+                },
+                onSetProperty = {item, properyType, newValue->
+                    registeredItems.setItemProperty(item.barcode, properyType, newValue)
+                },
+                onRequestSelection = {item, propertyType->
                 },
                 Modifier.weight(1f))
         } else {

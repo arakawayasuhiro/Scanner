@@ -1,24 +1,22 @@
 package com.example.scanner.repository
 
-import android.util.Log
-
-private val TAG = "ScannerApp"
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 class RegisteredItem(
-    var barcode:String,
-    var manufacturer:String,
-    var series:String? = null,
-    var category:String? = null,
-    var name:String? = null,
-    var count:Int = 1
+    initialBarcode:String,
+    initialManufacturer:String = getManufacturerCode(initialBarcode),
+    initialSeries:String? = null
     )
 {
-    constructor(barcode: String):this(barcode, getManufacturerCode(barcode), null, null, barcode, 1)
-
-    fun isEmpty(): Boolean {
-        return series == null && category == null && name == null
-    }
-
+    var barcode by mutableStateOf(initialBarcode)
+    var manufacturer:String by mutableStateOf(initialManufacturer)
+    var series:String? by mutableStateOf(initialSeries)
+    var category:String? by  mutableStateOf(null)
+    var name:String? by mutableStateOf(null)
+    var count:Int = 1
     enum class PropertyType{
         Barcode,
         Manufacturer,
@@ -49,28 +47,26 @@ class RegisteredItem(
 }
 
 class RegisteredItems {
-    private val _items = mutableListOf<RegisteredItem>()
+    private val _items = mutableStateListOf<RegisteredItem>()
 
     val knownManufacturers = mutableListOf<ItemProperty>()
     val knownSeries = mutableListOf<ItemProperty>()
 
-    val items:List<RegisteredItem> = _items
+    val items
+        get() = _items
+
     fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
         val item = _items.find{item-> item.barcode == barcode}?:addItem(barcode)
         updateItemProperty(item, propertyType, newValue)
     }
     private fun updateItemProperty(item: RegisteredItem, propertyType: RegisteredItem.PropertyType, newValue:String) {
-        Log.d(TAG, "item(${item.barcode}) propertyType:${propertyType}, value:'${newValue}'")
         item.apply {
             if (propertyType == RegisteredItem.PropertyType.Manufacturer) {
                 val mpart = RegisteredItem.getManufacturerCode(barcode)
-                Log.d(TAG, "mpart:${mpart}")
                 val m = knownManufacturers.find { property -> property.barcode == mpart }?.apply {
-                    Log.d(TAG, "update knowMAnufactueres: ${mpart}:${newValue}")
                     name = newValue
                 }
                 if (m == null) {
-                    Log.d(TAG, "add to knowManufactueres: ${mpart}:${newValue}")
                     knownManufacturers.add(ItemProperty(0, mpart, newValue))
                 }
                 manufacturer = newValue
@@ -98,7 +94,7 @@ class RegisteredItems {
         }
         val series = knownSeries.find {property -> barcode.startsWith(property.barcode)}
 
-        return RegisteredItem(barcode, manufacturer, series?.name, null, null)
+        return RegisteredItem(barcode, manufacturer, series?.name)
     }
     fun addItem(barcode:String): RegisteredItem {
         var item = _items.find{item-> item.barcode == barcode}
@@ -107,8 +103,8 @@ class RegisteredItems {
             return item
         }
         item = RegisteredItem(barcode)
-        Log.d(TAG, "item.manufacturer:'${item.manufacturer}'")
-        var m = knownManufacturers.find{ propery-> propery.barcode == item.manufacturer}?.apply {
+
+        val m = knownManufacturers.find{ propery-> propery.barcode == item.manufacturer}?.apply {
             item.manufacturer = name
         }
 
