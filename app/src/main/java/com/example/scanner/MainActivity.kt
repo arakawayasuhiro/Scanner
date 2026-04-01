@@ -1,7 +1,6 @@
 package com.example.scanner
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.scanner.repository.RegisteredItems
+import com.example.scanner.ui.contents.ContentsMode
 import com.example.scanner.ui.contents.MainContents
 import com.example.scanner.ui.contents.PermissionDock
 import com.example.scanner.ui.theme.ScannerTheme
@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                             Text("Not Granted")
                         }
                     ) {
-                        MainContents(registeredItems, false, Modifier.padding(innerPadding))
+                        MainContents(registeredItems, ContentsMode.Scan, Modifier.padding(innerPadding))
                     }
                 }
             }

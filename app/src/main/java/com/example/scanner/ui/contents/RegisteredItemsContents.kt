@@ -37,10 +37,7 @@ fun RegisteredItemsContents(
 
     if (requestItem != null) {
         SelectActionDialog(
-            onClose =
-                {
-                    requestItem = null
-                },
+            onClose = { requestItem = null },
             onRequestScan =
                 {
                     onRequestScan(requestItem, requestProperty)
@@ -77,7 +74,6 @@ fun ItemRow(item: RegisteredItem, onRequest:(RegisteredItem.PropertyType)->Unit,
     Column(modifier) {
         ItemDetailRow(RegisteredItem.PropertyType.Barcode, item.barcode, {onRequest(RegisteredItem.PropertyType.Barcode)})
         ItemDetailRow(RegisteredItem.PropertyType.Manufacturer, item.manufacturer, {onRequest(RegisteredItem.PropertyType.Manufacturer)})
-        ItemDetailRow(RegisteredItem.PropertyType.Series, item.series, {onRequest(RegisteredItem.PropertyType.Series)})
         ItemDetailRow(RegisteredItem.PropertyType.Category, item.category, {onRequest(RegisteredItem.PropertyType.Category)})
         ItemDetailRow(RegisteredItem.PropertyType.Name, item.name, { onRequest(RegisteredItem.PropertyType.Name)})
     }

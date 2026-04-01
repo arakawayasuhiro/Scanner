@@ -20,7 +20,6 @@ class RegisteredItem(
     enum class PropertyType{
         Barcode,
         Manufacturer,
-        Series,
         Category,
         Name
     }
@@ -30,7 +29,6 @@ class RegisteredItem(
             return when (propertyType) {
                 PropertyType.Barcode -> "Barcode"
                 PropertyType.Manufacturer -> "Manufacturer"
-                PropertyType.Series -> "Series"
                 PropertyType.Category -> "Category"
                 PropertyType.Name -> "Name"
             }
@@ -50,7 +48,7 @@ class RegisteredItems {
     private val _items = mutableStateListOf<RegisteredItem>()
 
     val knownManufacturers = mutableListOf<ItemProperty>()
-    val knownSeries = mutableListOf<ItemProperty>()
+    val knownCategories = mutableListOf<ItemProperty>()
 
     val items
         get() = _items
@@ -70,10 +68,10 @@ class RegisteredItems {
                     knownManufacturers.add(ItemProperty(0, mpart, newValue))
                 }
                 manufacturer = newValue
-            } else if (propertyType == RegisteredItem.PropertyType.Series) {
+            } else if (propertyType == RegisteredItem.PropertyType.Category) {
                 series?.let { code ->
                     if (code.all { it.isDigit() }) {
-                        knownSeries.add(ItemProperty(1, code, newValue))
+                        knownCategories.add(ItemProperty(1, code, newValue))
                     }
                 }
                 series = newValue
@@ -92,7 +90,7 @@ class RegisteredItems {
         knownManufacturers.find{ propery-> propery.barcode == manufacturer}?.run {
             manufacturer = name
         }
-        val series = knownSeries.find {property -> barcode.startsWith(property.barcode)}
+        val series = knownCategories.find { property -> barcode.startsWith(property.barcode)}
 
         return RegisteredItem(barcode, manufacturer, series?.name)
     }
@@ -111,11 +109,25 @@ class RegisteredItems {
         if (m == null) {
             knownManufacturers.add(ItemProperty(0, item.manufacturer, item.manufacturer))
         }
-        knownSeries.find {property -> barcode.startsWith(property.barcode)}?.let{property ->
+        knownCategories.find { property -> barcode.startsWith(property.barcode)}?.let{ property ->
             item.series = property.name
         }
         _items.add(item)
         return item
+    }
+
+    fun getManufactureres(): List<ItemProperty> {
+        return knownManufacturers
+    }
+    fun getCategories(): List<ItemProperty> {
+        return knownCategories
+    }
+    fun getItemProperties(propertyType: RegisteredItem.PropertyType) : List<ItemProperty>{
+        return when (propertyType) {
+            RegisteredItem.PropertyType.Manufacturer-> getManufactureres()
+            RegisteredItem.PropertyType.Category->getCategories()
+            else-> listOf()
+        }
     }
 }
 

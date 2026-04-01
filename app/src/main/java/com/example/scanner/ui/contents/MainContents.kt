@@ -18,54 +18,80 @@ import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.repository.RegisteredItems
 import com.example.scanner.ui.ScannerViewModel
 
+enum class ContentsMode {
+    Scan,
+    List,
+    Select
+}
 @Composable
-fun MainContents(registeredItems: RegisteredItems, initialIsList:Boolean, modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
-    var isList by remember { mutableStateOf(initialIsList) }
+fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, modifier: Modifier = Modifier, viewModel: ScannerViewModel = ScannerViewModel()) {
+    var contentsMode by remember { mutableStateOf(initialMode) }
     var requestPropertyType by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
     var targetItem by remember {mutableStateOf<RegisteredItem?>(null)}
 
     Column(modifier = modifier.fillMaxWidth()) {
-        if (isList) {
-            RegisteredItemsContents(
-                registeredItems.items,
-                onRequestScan = { item, propertyType->
-                    targetItem = item
-                    requestPropertyType = propertyType
-                    isList = false
-                },
-                onSetProperty = {item, properyType, newValue->
-                    registeredItems.setItemProperty(item.barcode, properyType, newValue)
-                },
-                onRequestSelection = {item, propertyType->
-                },
-                Modifier.weight(1f))
-        } else {
-            CameraScannerContents(
-                requestPropertyType,
-                onSelectBarcode = {text->
-                    registeredItems.addItem(text)
-                    isList = true
-                },
-                onSelectText = {text->
-                    targetItem?.run {
-                        registeredItems.setItemProperty(barcode, requestPropertyType, text)
-                    }
+        when(contentsMode) {
+            ContentsMode.List-> {
+                RegisteredItemsContents(
+                    registeredItems.items,
+                    onRequestScan = { item, propertyType ->
+                        targetItem = item
+                        requestPropertyType = propertyType
+                        contentsMode = ContentsMode.Scan
+                    },
+                    onSetProperty = { item, properyType, newValue ->
+                        registeredItems.setItemProperty(item.barcode, properyType, newValue)
+                    },
+                    onRequestSelection = { item, propertyType ->
+                        targetItem = item
+                        requestPropertyType = propertyType
+                        contentsMode = ContentsMode.Select
+                    },
+                    Modifier.weight(1f)
+                )
+            }
+            ContentsMode.Scan-> {
+                CameraScannerContents(
+                    requestPropertyType,
+                    onSelectBarcode = {text->
+                        registeredItems.addItem(text)
+                        contentsMode = ContentsMode.List
+                    },
+                    onSelectText = {text->
+                        targetItem?.run {
+                            registeredItems.setItemProperty(barcode, requestPropertyType, text)
+                        }
+                        contentsMode = ContentsMode.List
+                    },
+                    Modifier.weight(1f), viewModel)
+            }
 
-                    isList = true
-                },
-                Modifier.weight(1f), viewModel)
+            ContentsMode.Select-> {
+                val propertyItemList = registeredItems.getItemProperties(requestPropertyType)
+                SelectPropertyValueContents(
+                    propertyType = requestPropertyType,
+                    propertyItems = propertyItemList,
+                    onSelected = {propertyType, newValue->
+                        targetItem?.run {
+                            registeredItems.setItemProperty(barcode, propertyType, newValue)
+                        }
+                        contentsMode = ContentsMode.List
+                    },
+                    onCancel = { contentsMode = ContentsMode.List}
+                )
+            }
         }
         Row(Modifier.align(Alignment.CenterHorizontally)) {
             Button(
                 onClick =
                     {
-                        isList= false
+                        contentsMode = ContentsMode.Scan
                         requestPropertyType = RegisteredItem.PropertyType.Barcode
                         targetItem = null
                     }, Modifier.padding(4.dp)) {
                 Text("New Item")
             }
-            Button(onClick = {isList = true}, Modifier.padding(4.dp)) {
+            Button(onClick = {contentsMode = ContentsMode.List}, Modifier.padding(4.dp)) {
                 Text("List")
             }
         }
