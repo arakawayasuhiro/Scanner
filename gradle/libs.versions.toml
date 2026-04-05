@@ -19,6 +19,7 @@ textRecognition = "16.0.1"
 textRecognitionJapanese = "16.0.1"
 roomRuntime = "2.8.4"
 roomCompiler = "2.8.4"
+roomKtx = "2.8.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -46,6 +47,7 @@ text-recognition = { group = "com.google.mlkit", name = "text-recognition", vers
 text-recognition-japanese = { group = "com.google.mlkit", name = "text-recognition-japanese", version.ref = "textRecognitionJapanese" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "roomRuntime" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

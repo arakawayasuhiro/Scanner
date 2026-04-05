@@ -1,5 +1,6 @@
 package com.example.scanner.ui.contents
 
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,10 +16,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import com.example.scanner.repository.ItemProperty
 import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.repository.RegisteredItems
 import com.example.scanner.ui.ScannerViewModel
+import kotlinx.coroutines.launch
 
+private const val TAG = "ScannerApp"
 enum class ContentsMode {
     Scan,
     List,
@@ -28,19 +36,23 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
     var contentsMode by remember { mutableStateOf(initialMode) }
     var requestPropertyType by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
     var targetItem by remember {mutableStateOf<RegisteredItem?>(null)}
-
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val items by registeredItems.items.collectAsStateWithLifecycle(listOf<RegisteredItem>(), LocalLifecycleOwner.current)
     Column(modifier = modifier.fillMaxWidth()) {
         when(contentsMode) {
             ContentsMode.List-> {
                 RegisteredItemsContents(
-                    registeredItems.items,
+                    items,
                     onRequestScan = { item, propertyType ->
                         targetItem = item
                         requestPropertyType = propertyType
                         contentsMode = ContentsMode.Scan
                     },
                     onSetProperty = { item, properyType, newValue ->
-                        registeredItems.setItemProperty(item.barcode, properyType, newValue)
+                        Log.d(TAG, "onSetProperty(${item.barcode}, $properyType, $newValue")
+                        lifecycleOwner.lifecycleScope.launch {
+                            registeredItems.setItemProperty(item.barcode, properyType, newValue)
+                        }
                     },
                     onRequestSelection = { item, propertyType ->
                         targetItem = item
@@ -54,12 +66,17 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                 CameraScannerContents(
                     requestPropertyType,
                     onSelectBarcode = {text->
-                        registeredItems.addItem(text)
-                        contentsMode = ContentsMode.List
+                        Log.d(TAG, "onSelectBarcode:'$text'")
+                        lifecycleOwner.lifecycleScope.launch {
+                            registeredItems.addItem(text)
+                            contentsMode = ContentsMode.List
+                        }
                     },
                     onSelectText = {text->
                         targetItem?.run {
-                            registeredItems.setItemProperty(barcode, requestPropertyType, text)
+                            lifecycleOwner.lifecycleScope.launch {
+                                registeredItems.setItemProperty(barcode, requestPropertyType, text)
+                            }
                         }
                         contentsMode = ContentsMode.List
                     },
@@ -67,13 +84,19 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
             }
 
             ContentsMode.Select-> {
-                val propertyItemList = registeredItems.getItemProperties(requestPropertyType)
+                var propertyItemList by remember { mutableStateOf(listOf<ItemProperty>()) }
+                LaunchedEffect(propertyItemList) {
+                    propertyItemList = registeredItems.getItemProperties(requestPropertyType)
+                }
+
                 SelectPropertyValueContents(
                     propertyType = requestPropertyType,
                     propertyItems = propertyItemList,
                     onSelected = {propertyType, newValue->
                         targetItem?.run {
-                            registeredItems.setItemProperty(barcode, propertyType, newValue)
+                            lifecycleOwner.lifecycleScope.launch {
+                                registeredItems.setItemProperty(barcode, propertyType, newValue)
+                            }
                         }
                         contentsMode = ContentsMode.List
                     },

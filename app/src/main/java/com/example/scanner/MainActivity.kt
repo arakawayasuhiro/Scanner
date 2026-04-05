@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val requestPermissions = listOf(Manifest.permission.CAMERA)
-        val registeredItems = RegisteredItems()
+        val registeredItems = RegisteredItems(baseContext)
         setContent {
             ScannerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -39,21 +39,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ScannerTheme {
-        Greeting("Android")
     }
 }

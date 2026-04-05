@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -37,6 +38,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -57,6 +59,8 @@ dependencies {
     implementation(libs.androidx.compose.runtime.livedata)
     implementation(libs.text.recognition)
     implementation(libs.text.recognition.japanese)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

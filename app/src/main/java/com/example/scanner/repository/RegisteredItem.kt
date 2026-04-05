@@ -1,27 +1,35 @@
 package com.example.scanner.repository
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.content.Context
+import android.util.Log
+import androidx.room.ColumnInfo
+import androidx.room.Dao
+import androidx.room.Database
+import androidx.room.Entity
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.Update
+import com.google.android.datatransport.Priority
+import kotlinx.coroutines.flow.Flow
+
+private val TAG = "ScannerApp"
 
 class RegisteredItem(
-    initialBarcode:String,
-    initialManufacturer:String = getManufacturerCode(initialBarcode),
-    initialSeries:String? = null
+    @ColumnInfo(name = "barcode") var barcode:String,
+    @ColumnInfo(name = "manufacturer") var manufacturer:String,
+    @ColumnInfo(name = "category") var category:String? = null,
+    @ColumnInfo(name = "name") var name:String? = null,
+    @ColumnInfo(name = "count") var count:Int = 1
     )
 {
-    var barcode by mutableStateOf(initialBarcode)
-    var manufacturer:String by mutableStateOf(initialManufacturer)
-    var series:String? by mutableStateOf(initialSeries)
-    var category:String? by  mutableStateOf(null)
-    var name:String? by mutableStateOf(null)
-    var count:Int = 1
     enum class PropertyType{
         Barcode,
         Manufacturer,
         Category,
-        Name
+        Name,
+        Count,
     }
 
     companion object {
@@ -31,6 +39,7 @@ class RegisteredItem(
                 PropertyType.Manufacturer -> "Manufacturer"
                 PropertyType.Category -> "Category"
                 PropertyType.Name -> "Name"
+                PropertyType.Count-> "Count"
             }
         }
         fun getManufacturerCode(barcode:String):String {
@@ -44,85 +53,65 @@ class RegisteredItem(
     }
 }
 
-class RegisteredItems {
-    private val _items = mutableStateListOf<RegisteredItem>()
+class RegisteredItems(context: Context) {
+    private val db = Room.databaseBuilder(context, ScannedItemDatabase::class.java, "scanneditem.db").build()
+    private val dao = db.scannedItemDao()
+    val items get() = dao.getRegisteredItems()
 
-    val knownManufacturers = mutableListOf<ItemProperty>()
-    val knownCategories = mutableListOf<ItemProperty>()
-
-    val items
-        get() = _items
-
-    fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
-        val item = _items.find{item-> item.barcode == barcode}?:addItem(barcode)
-        updateItemProperty(item, propertyType, newValue)
+    suspend fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
+        dao.getRegisteredItem(barcode)?.let { item ->
+            Log.d(TAG, "setItemProperty: item:'${item.barcode}'")
+            updateItemProperty(item, propertyType, newValue)
+        }
     }
-    private fun updateItemProperty(item: RegisteredItem, propertyType: RegisteredItem.PropertyType, newValue:String) {
+
+    suspend private fun updateItemProperty(item: RegisteredItem, propertyType: RegisteredItem.PropertyType, newValue:String) {
         item.apply {
             if (propertyType == RegisteredItem.PropertyType.Manufacturer) {
                 val mpart = RegisteredItem.getManufacturerCode(barcode)
-                val m = knownManufacturers.find { property -> property.barcode == mpart }?.apply {
-                    name = newValue
-                }
-                if (m == null) {
-                    knownManufacturers.add(ItemProperty(0, mpart, newValue))
-                }
+                dao.updateManufacturer(Manufacturer(mpart, newValue))
                 manufacturer = newValue
             } else if (propertyType == RegisteredItem.PropertyType.Category) {
-                series?.let { code ->
+                category?.let { code ->
                     if (code.all { it.isDigit() }) {
-                        knownCategories.add(ItemProperty(1, code, newValue))
+                        dao.updateCategory(Category(code, newValue))
                     }
                 }
-                series = newValue
+                category = newValue
             } else if (propertyType == RegisteredItem.PropertyType.Name) {
                 name = newValue
+                dao.updateItem(this)
             }
         }
     }
-    fun getItem(barcode:String): RegisteredItem {
-        val item = _items.find{item-> item.barcode == barcode}
-        if (item != null) {
-            return item
-        }
-
-        var manufacturer = RegisteredItem.getManufacturerCode(barcode)
-        knownManufacturers.find{ propery-> propery.barcode == manufacturer}?.run {
-            manufacturer = name
-        }
-        val series = knownCategories.find { property -> barcode.startsWith(property.barcode)}
-
-        return RegisteredItem(barcode, manufacturer, series?.name)
+    suspend fun getItem(barcode:String): RegisteredItem? {
+        return dao.getRegisteredItem(barcode)
     }
-    fun addItem(barcode:String): RegisteredItem {
-        var item = _items.find{item-> item.barcode == barcode}
+
+    suspend fun addItem(barcode:String): RegisteredItem {
+        Log.d(TAG, "addItem($barcode)")
+        val item = dao.getRegisteredItem(barcode)
         if (item != null) {
+            Log.d(TAG, "item($barcode) is found")
             item.count++
+            dao.updateItem(item)
             return item
         }
-        item = RegisteredItem(barcode)
 
-        val m = knownManufacturers.find{ propery-> propery.barcode == item.manufacturer}?.apply {
-            item.manufacturer = name
-        }
-
-        if (m == null) {
-            knownManufacturers.add(ItemProperty(0, item.manufacturer, item.manufacturer))
-        }
-        knownCategories.find { property -> barcode.startsWith(property.barcode)}?.let{ property ->
-            item.series = property.name
-        }
-        _items.add(item)
-        return item
+        return dao.registerItem(barcode)
     }
 
-    fun getManufactureres(): List<ItemProperty> {
-        return knownManufacturers
+    suspend fun getManufactureres(): List<ItemProperty> {
+        return dao.getManufacturers().map {manufacturer ->
+            ItemProperty(manufacturer.barcode, manufacturer.name)
+        }
     }
-    fun getCategories(): List<ItemProperty> {
-        return knownCategories
+    suspend fun getCategories(): List<ItemProperty> {
+        return dao.getCategories().map {category ->
+            ItemProperty(category.barcode, category.name)
+        }
     }
-    fun getItemProperties(propertyType: RegisteredItem.PropertyType) : List<ItemProperty>{
+    suspend fun getItemProperties(propertyType: RegisteredItem.PropertyType) : List<ItemProperty>{
         return when (propertyType) {
             RegisteredItem.PropertyType.Manufacturer-> getManufactureres()
             RegisteredItem.PropertyType.Category->getCategories()
@@ -132,7 +121,104 @@ class RegisteredItems {
 }
 
 data class ItemProperty(
-    val uId:Int,
     val barcode:String,
     var name:String
 )
+
+@Entity(primaryKeys = ["barcode"])
+data class ScannedItem(
+    @ColumnInfo("barcode") val barcode:String,
+    @ColumnInfo("manufacturerCode") val manufacturerCode:String,
+    @ColumnInfo("categoryCode") val categoryCode:String?,
+    @ColumnInfo("name") var name: String?,
+    @ColumnInfo(name = "count") var count:Int,
+)
+
+@Entity(primaryKeys = ["barcode"])
+data class Manufacturer(
+    @ColumnInfo(name = "barcode") val barcode:String,
+    @ColumnInfo(name = "name") var name:String,
+)
+@Entity(primaryKeys = ["barcode"])
+data class Category(
+    @ColumnInfo(name = "barcode") val barcode:String,
+    @ColumnInfo(name = "name") var name:String,
+)
+
+
+@Dao
+interface ScannedItemsDao{
+    @Query("select * from ScannedItem")
+    fun getScannedItems(): List<ScannedItem>
+
+    @Query("select * from ScannedItem where barcode = :barcode")
+    suspend fun getScannedItem(barcode:String): ScannedItem
+    @Query("select i.barcode as barcode, m.name as manufacturer, c.name as category, i.name as name, i.count as count " +
+            "from ScannedItem i inner join Manufacturer m on i.manufacturerCode = m.barcode left outer join Category c on i.categoryCode = c.barcode"
+    )
+    fun getRegisteredItems(): Flow<List<RegisteredItem>>
+
+    @Query("select i.barcode as barcode, m.name as manufacturer, c.name as category, i.name as name, i.count as count " +
+            "from ScannedItem i inner join Manufacturer m on i.manufacturerCode = m.barcode left outer join Category c on i.categoryCode = c.barcode " +
+            "where i.barcode = :barcode"
+    )
+    suspend fun getRegisteredItem(barcode:String): RegisteredItem?
+
+    @Query("select * from Manufacturer where barcode = :mbar")
+    suspend fun getManufacturer(mbar:String): Manufacturer?
+
+    @Query("select * from Category where barcode = :cbar")
+    suspend fun getCategory(cbar:String): Category
+
+    @Insert
+    suspend fun addItem(item: ScannedItem)
+
+    suspend fun registerItem(barcode:String): RegisteredItem {
+        Log.d(TAG, "registerItem($barcode)")
+        val mbar = RegisteredItem.getManufacturerCode(barcode)
+        var m = getManufacturer(mbar)
+        if (m == null) {
+            m = Manufacturer(barcode = mbar, name = mbar)
+            Log.d(TAG, "new ManufacturerCode:'$mbar'")
+            addManufacturer(m)
+        }
+
+        val newItem = ScannedItem(barcode = barcode, manufacturerCode = m.barcode, categoryCode = null, name = null, count = 1)
+        addItem(newItem)
+        Log.d(TAG, "regusterItem: addItem completed")
+        return RegisteredItem(newItem.barcode, m.name)
+    }
+
+    suspend fun updateItem(newItem: RegisteredItem) {
+        val item = getScannedItem(newItem.barcode)
+        item.count = newItem.count
+        item.name = newItem.name
+        Log.d(TAG,"updateItem: barcode:${item.barcode} count:${item.count} name:${item.name}")
+        updateScannedItem(item)
+    }
+    @Update
+    suspend fun updateScannedItem(item: ScannedItem)
+
+    @Query("select * from Manufacturer")
+    suspend fun getManufacturers(): List<Manufacturer>
+
+    @Query("select * from Category")
+    suspend fun getCategories(): List<Category>
+
+    @Insert
+    suspend fun addManufacturer(manufacturer: Manufacturer)
+
+    @Insert
+    suspend fun addCategory(category: Category)
+
+    @Update
+    suspend fun updateManufacturer(manufacturer: Manufacturer)
+
+    @Update
+    suspend fun updateCategory(category: Category)
+}
+
+@Database(entities = [ScannedItem::class, Manufacturer::class, Category::class], version = 1, exportSchema = false)
+abstract  class ScannedItemDatabase : RoomDatabase() {
+    abstract fun scannedItemDao(): ScannedItemsDao
+}

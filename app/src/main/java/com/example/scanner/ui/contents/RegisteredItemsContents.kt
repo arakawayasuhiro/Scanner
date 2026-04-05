@@ -64,18 +64,23 @@ fun RegisteredItemsContents(
                     requestProperty = properyType
                     requestItem = item
                 },
-                Modifier)
+                Modifier.padding(vertical = 4.dp))
         }
     }
 }
 
 @Composable
 fun ItemRow(item: RegisteredItem, onRequest:(RegisteredItem.PropertyType)->Unit, modifier: Modifier = Modifier){
-    Column(modifier) {
-        ItemDetailRow(RegisteredItem.PropertyType.Barcode, item.barcode, {onRequest(RegisteredItem.PropertyType.Barcode)})
-        ItemDetailRow(RegisteredItem.PropertyType.Manufacturer, item.manufacturer, {onRequest(RegisteredItem.PropertyType.Manufacturer)})
-        ItemDetailRow(RegisteredItem.PropertyType.Category, item.category, {onRequest(RegisteredItem.PropertyType.Category)})
-        ItemDetailRow(RegisteredItem.PropertyType.Name, item.name, { onRequest(RegisteredItem.PropertyType.Name)})
+    Card(Modifier.padding(4.dp),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(modifier) {
+            ItemDetailRow(RegisteredItem.PropertyType.Barcode, item.barcode, {onRequest(RegisteredItem.PropertyType.Barcode)})
+            ItemDetailRow(RegisteredItem.PropertyType.Manufacturer, item.manufacturer, {onRequest(RegisteredItem.PropertyType.Manufacturer)})
+            ItemDetailRow(RegisteredItem.PropertyType.Category, item.category, {onRequest(RegisteredItem.PropertyType.Category)})
+            ItemDetailRow(RegisteredItem.PropertyType.Name, item.name, { onRequest(RegisteredItem.PropertyType.Name)})
+            ItemDetailRow(RegisteredItem.PropertyType.Count, item.count.toString(), {})
+        }
     }
 }
 @OptIn(ExperimentalFoundationApi::class)
