@@ -110,7 +110,7 @@ fun SelectActionDialog(
             shape = RoundedCornerShape(16.dp)
         ) {
             var valueText by remember {mutableStateOf("")}
-            Column() {
+            Column(Modifier.padding(horizontal = 8.dp)) {
                 Button({ onRequestScan() }, Modifier.align(alignment = Alignment.End)) {
                     Text("Scan")
                 }

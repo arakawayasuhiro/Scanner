@@ -18,12 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.lifecycleScope
 import com.example.scanner.repository.ItemProperty
 import com.example.scanner.repository.RegisteredItem
 import com.example.scanner.repository.RegisteredItems
 import com.example.scanner.ui.ScannerViewModel
-import kotlinx.coroutines.launch
 
 private const val TAG = "ScannerApp"
 enum class ContentsMode {
@@ -36,7 +34,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
     var contentsMode by remember { mutableStateOf(initialMode) }
     var requestPropertyType by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
     var targetItem by remember {mutableStateOf<RegisteredItem?>(null)}
-    val lifecycleOwner = LocalLifecycleOwner.current
     val items by registeredItems.items.collectAsStateWithLifecycle(listOf<RegisteredItem>(), LocalLifecycleOwner.current)
     Column(modifier = modifier.fillMaxWidth()) {
         when(contentsMode) {
@@ -50,9 +47,7 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                     },
                     onSetProperty = { item, properyType, newValue ->
                         Log.d(TAG, "onSetProperty(${item.barcode}, $properyType, $newValue")
-                        lifecycleOwner.lifecycleScope.launch {
-                            registeredItems.setItemProperty(item.barcode, properyType, newValue)
-                        }
+                        registeredItems.setItemProperty(item.barcode, properyType, newValue)
                     },
                     onRequestSelection = { item, propertyType ->
                         targetItem = item
@@ -67,16 +62,12 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                     requestPropertyType,
                     onSelectBarcode = {text->
                         Log.d(TAG, "onSelectBarcode:'$text'")
-                        lifecycleOwner.lifecycleScope.launch {
-                            registeredItems.addItem(text)
-                            contentsMode = ContentsMode.List
-                        }
+                        registeredItems.addItem(text)
+                        contentsMode = ContentsMode.List
                     },
                     onSelectText = {text->
                         targetItem?.run {
-                            lifecycleOwner.lifecycleScope.launch {
-                                registeredItems.setItemProperty(barcode, requestPropertyType, text)
-                            }
+                            registeredItems.setItemProperty(barcode, requestPropertyType, text)
                         }
                         contentsMode = ContentsMode.List
                     },
@@ -94,9 +85,7 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                     propertyItems = propertyItemList,
                     onSelected = {propertyType, newValue->
                         targetItem?.run {
-                            lifecycleOwner.lifecycleScope.launch {
-                                registeredItems.setItemProperty(barcode, propertyType, newValue)
-                            }
+                            registeredItems.setItemProperty(barcode, propertyType, newValue)
                         }
                         contentsMode = ContentsMode.List
                     },

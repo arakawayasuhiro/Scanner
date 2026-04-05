@@ -2,6 +2,8 @@ package com.example.scanner.repository
 
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -11,9 +13,11 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
-private val TAG = "ScannerApp"
+private const val TAG = "ScannerApp"
 
 class RegisteredItem(
     @ColumnInfo(name = "barcode") var barcode:String,
@@ -52,19 +56,21 @@ class RegisteredItem(
     }
 }
 
-class RegisteredItems(context: Context) {
+class RegisteredItems(context: Context, val lifecycleOwner: LifecycleOwner) {
     private val db = Room.databaseBuilder(context, ScannedItemDatabase::class.java, "scanneditem.db").build()
     private val dao = db.scannedItemDao()
     val items get() = dao.getRegisteredItems()
 
-    suspend fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
-        dao.getRegisteredItem(barcode)?.let { item ->
-            Log.d(TAG, "setItemProperty: item:'${item.barcode}'")
-            updateItemProperty(item, propertyType, newValue)
+    fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
+        lifecycleOwner.lifecycleScope.launch {
+            dao.getRegisteredItem(barcode)?.let { item ->
+                Log.d(TAG, "setItemProperty: item:'${item.barcode}'")
+                updateItemProperty(item, propertyType, newValue)
+            }
         }
     }
 
-    suspend private fun updateItemProperty(item: RegisteredItem, propertyType: RegisteredItem.PropertyType, newValue:String) {
+    private suspend fun updateItemProperty(item: RegisteredItem, propertyType: RegisteredItem.PropertyType, newValue:String) {
         item.apply {
             if (propertyType == RegisteredItem.PropertyType.Manufacturer) {
                 val mpart = RegisteredItem.getManufacturerCode(barcode)
@@ -84,35 +90,41 @@ class RegisteredItems(context: Context) {
         }
     }
     suspend fun getItem(barcode:String): RegisteredItem? {
-        return dao.getRegisteredItem(barcode)
-    }
-
-    suspend fun addItem(barcode:String): RegisteredItem {
-        Log.d(TAG, "addItem($barcode)")
-        val item = dao.getRegisteredItem(barcode)
-        if (item != null) {
-            Log.d(TAG, "item($barcode) is found")
-            item.count++
-            dao.updateItem(item)
-            return item
+        val item = lifecycleOwner.lifecycleScope.async {
+            dao.getRegisteredItem(barcode)
         }
 
-        return dao.registerItem(barcode)
+        return item.await()
     }
 
-    suspend fun getManufactureres(): List<ItemProperty> {
+    fun addItem(barcode:String) {
+        Log.d(TAG, "addItem($barcode)")
+        lifecycleOwner.lifecycleScope.launch {
+            val item = dao.getRegisteredItem(barcode)
+            if (item != null) {
+                Log.d(TAG, "item($barcode) is found")
+                item.count++
+                dao.updateItem(item)
+            } else {
+                dao.registerItem(barcode)
+            }
+        }
+    }
+
+
+    private suspend fun getManufacturers(): List<ItemProperty> {
         return dao.getManufacturers().map {manufacturer ->
             ItemProperty(manufacturer.barcode, manufacturer.name)
         }
     }
-    suspend fun getCategories(): List<ItemProperty> {
+    private suspend fun getCategories(): List<ItemProperty> {
         return dao.getCategories().map {category ->
             ItemProperty(category.barcode, category.name)
         }
     }
     suspend fun getItemProperties(propertyType: RegisteredItem.PropertyType) : List<ItemProperty>{
         return when (propertyType) {
-            RegisteredItem.PropertyType.Manufacturer-> getManufactureres()
+            RegisteredItem.PropertyType.Manufacturer-> getManufacturers()
             RegisteredItem.PropertyType.Category->getCategories()
             else-> listOf()
         }
@@ -184,7 +196,7 @@ interface ScannedItemsDao{
 
         val newItem = ScannedItem(barcode = barcode, manufacturerCode = m.barcode, categoryCode = null, name = null, count = 1)
         addItem(newItem)
-        Log.d(TAG, "regusterItem: addItem completed")
+        Log.d(TAG, "registerItem: addItem completed")
         return RegisteredItem(newItem.barcode, m.name)
     }
 

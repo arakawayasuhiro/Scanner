@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val requestPermissions = listOf(Manifest.permission.CAMERA)
-        val registeredItems = RegisteredItems(baseContext)
+        val registeredItems = RegisteredItems(baseContext, this)
         setContent {
             ScannerTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
