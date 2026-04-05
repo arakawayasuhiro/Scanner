@@ -11,7 +11,6 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
-import com.google.android.datatransport.Priority
 import kotlinx.coroutines.flow.Flow
 
 private val TAG = "ScannerApp"
