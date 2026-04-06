@@ -2,8 +2,6 @@ package com.example.scanner.repository
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.lifecycleScope
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -13,9 +11,7 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
 
 private const val TAG = "ScannerApp"
 
@@ -56,17 +52,15 @@ class RegisteredItem(
     }
 }
 
-class RegisteredItems(context: Context, val lifecycleOwner: LifecycleOwner) {
+class RegisteredItems(context: Context) {
     private val db = Room.databaseBuilder(context, ScannedItemDatabase::class.java, "scanneditem.db").build()
     private val dao = db.scannedItemDao()
     val items get() = dao.getRegisteredItems()
 
-    fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
-        lifecycleOwner.lifecycleScope.launch {
-            dao.getRegisteredItem(barcode)?.let { item ->
-                Log.d(TAG, "setItemProperty: item:'${item.barcode}'")
-                updateItemProperty(item, propertyType, newValue)
-            }
+    suspend fun setItemProperty(barcode:String, propertyType: RegisteredItem.PropertyType, newValue:String) {
+        dao.getRegisteredItem(barcode)?.let { item ->
+            Log.d(TAG, "setItemProperty: item:'${item.barcode}'")
+            updateItemProperty(item, propertyType, newValue)
         }
     }
 
@@ -90,24 +84,20 @@ class RegisteredItems(context: Context, val lifecycleOwner: LifecycleOwner) {
         }
     }
     suspend fun getItem(barcode:String): RegisteredItem? {
-        val item = lifecycleOwner.lifecycleScope.async {
-            dao.getRegisteredItem(barcode)
-        }
+        val item = dao.getRegisteredItem(barcode)
 
-        return item.await()
+        return item
     }
 
-    fun addItem(barcode:String) {
+    suspend fun addItem(barcode:String) {
         Log.d(TAG, "addItem($barcode)")
-        lifecycleOwner.lifecycleScope.launch {
-            val item = dao.getRegisteredItem(barcode)
-            if (item != null) {
-                Log.d(TAG, "item($barcode) is found")
-                item.count++
-                dao.updateItem(item)
-            } else {
-                dao.registerItem(barcode)
-            }
+        val item = dao.getRegisteredItem(barcode)
+        if (item != null) {
+            Log.d(TAG, "item($barcode) is found")
+            item.count++
+            dao.updateItem(item)
+        } else {
+            dao.registerItem(barcode)
         }
     }
 
