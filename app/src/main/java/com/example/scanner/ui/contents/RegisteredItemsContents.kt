@@ -9,9 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -31,6 +35,7 @@ fun RegisteredItemsContents(
     onRequestScan:(RegisteredItem?, RegisteredItem.PropertyType)-> Unit,
     onSetProperty:(RegisteredItem, RegisteredItem.PropertyType, String)->Unit,
     onRequestSelection:(RegisteredItem, RegisteredItem.PropertyType)->Unit,
+    onDepete:(RegisteredItem)->Unit,
     modifier: Modifier = Modifier) {
     var requestProperty by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
     var requestItem by remember {mutableStateOf<RegisteredItem?>(null)}
@@ -64,17 +69,32 @@ fun RegisteredItemsContents(
                     requestProperty = properyType
                     requestItem = item
                 },
+                {
+                    onDepete(item)
+                },
                 Modifier.padding(vertical = 4.dp))
         }
     }
 }
 
 @Composable
-fun ItemRow(item: RegisteredItem, onRequest:(RegisteredItem.PropertyType)->Unit, modifier: Modifier = Modifier){
+fun ItemRow(
+    item: RegisteredItem,
+    onRequest:(RegisteredItem.PropertyType)->Unit,
+    onDelete:()->Unit,
+    modifier: Modifier = Modifier){
     Card(Modifier.padding(4.dp),
         shape = RoundedCornerShape(8.dp)
     ) {
         Column(modifier) {
+            Row(Modifier.fillMaxWidth().padding(4.dp)) {
+                FilledIconButton({ onDelete()}) {
+                    Icon(
+                      Icons.Default.Delete,
+                        ""
+                    )
+                }
+            }
             ItemDetailRow(RegisteredItem.PropertyType.Barcode, item.barcode, {onRequest(RegisteredItem.PropertyType.Barcode)})
             ItemDetailRow(RegisteredItem.PropertyType.Manufacturer, item.manufacturer, {onRequest(RegisteredItem.PropertyType.Manufacturer)})
             ItemDetailRow(RegisteredItem.PropertyType.Category, item.category, {onRequest(RegisteredItem.PropertyType.Category)})

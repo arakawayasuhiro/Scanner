@@ -6,8 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,8 +49,12 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
     val newItemFlow = remember {MutableStateFlow<String?>(null)}
     val newItemRequest by newItemFlow.collectAsState(null)
     var itemToAdd by remember {mutableStateOf<String?>(null)}
+
+    var deleteItemRequest by remember{mutableStateOf<RegisteredItem?>(null)}
+    var itemToDelete by remember{mutableStateOf<String?>(null)}
+
     newItemRequest?.let{request->
-        if (items.any{item-> item.barcode == newItemRequest} != true){
+        if (!items.any{item-> item.barcode == newItemRequest}){
             LaunchedEffect(request) {
                 registeredItems.addItem(request)
                 newItemFlow.value = null
@@ -71,13 +79,44 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
         }
     }
     LaunchedEffect(requestPropertyValue, requestPropertyType) {
-        Log.d(TAG, "LaunchEffect ${requestPropertyValue}, ${requestPropertyType}")
+        Log.d(TAG, "LaunchEffect $requestPropertyValue, $requestPropertyType")
         if (requestPropertyValue != null) {
             targetItem?.run {
                 registeredItems.setItemProperty(barcode, requestPropertyType, requestPropertyValue!!)
             }
 
             requestPropertyValue = null
+        }
+    }
+
+    deleteItemRequest?.let{item->
+        AlertDialog(
+            onDismissRequest = {deleteItemRequest = null},
+            confirmButton = {
+                Button({
+                    deleteItemRequest = null
+                    itemToDelete = item.barcode
+                }){
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                Button({
+                    deleteItemRequest = null
+                }){
+                    Text("Dismiss")
+                }
+            },
+            icon = {Icon(Icons.Default.Warning, "")},
+            title = {Text("Delete Item")},
+            text = {Text("Delete '${deleteItemRequest?.name?:deleteItemRequest?.barcode}'?")}
+        )
+    }
+    LaunchedEffect(itemToDelete) {
+        Log.d(TAG, "delete: '$itemToDelete'")
+        itemToDelete?.let {barcode->
+            registeredItems.deleteItemByBarcode(barcode)
+            itemToDelete = null
         }
     }
     Column(modifier = modifier.fillMaxWidth()) {
@@ -100,6 +139,9 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                         targetItem = item
                         requestPropertyType = propertyType
                         contentsMode = ContentsMode.Select
+                    },
+                    onDepete = {item->
+                        deleteItemRequest = item
                     },
                     Modifier.weight(1f)
                 )

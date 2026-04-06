@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
+import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.Query
@@ -101,6 +102,9 @@ class RegisteredItems(context: Context) {
         }
     }
 
+    suspend fun deleteItemByBarcode(barcode:String) {
+        dao.deleteItem(barcode)
+    }
 
     private suspend fun getManufacturers(): List<ItemProperty> {
         return dao.getManufacturers().map {manufacturer ->
@@ -173,6 +177,9 @@ interface ScannedItemsDao{
 
     @Insert
     suspend fun addItem(item: ScannedItem)
+
+    @Query("delete from ScannedItem where barcode = :barcode")
+    suspend fun deleteItem(barcode:String)
 
     suspend fun registerItem(barcode:String): RegisteredItem {
         Log.d(TAG, "registerItem($barcode)")
