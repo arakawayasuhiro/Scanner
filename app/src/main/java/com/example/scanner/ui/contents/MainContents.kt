@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,7 +46,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
     val newItemRequest by newItemFlow.collectAsState(null)
     var itemToAdd by remember {mutableStateOf<String?>(null)}
 
-    var deleteItemRequest by remember{mutableStateOf<RegisteredItem?>(null)}
     var itemToDelete by remember{mutableStateOf<String?>(null)}
 
     newItemRequest?.let{request->
@@ -89,29 +84,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
         }
     }
 
-    deleteItemRequest?.let{item->
-        AlertDialog(
-            onDismissRequest = {deleteItemRequest = null},
-            confirmButton = {
-                Button({
-                    deleteItemRequest = null
-                    itemToDelete = item.barcode
-                }){
-                    Text("Delete")
-                }
-            },
-            dismissButton = {
-                Button({
-                    deleteItemRequest = null
-                }){
-                    Text("Dismiss")
-                }
-            },
-            icon = {Icon(Icons.Default.Warning, "")},
-            title = {Text("Delete Item")},
-            text = {Text("Delete '${deleteItemRequest?.name?:deleteItemRequest?.barcode}'?")}
-        )
-    }
     LaunchedEffect(itemToDelete) {
         Log.d(TAG, "delete: '$itemToDelete'")
         itemToDelete?.let {barcode->
@@ -140,8 +112,8 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                         requestPropertyType = propertyType
                         contentsMode = ContentsMode.Select
                     },
-                    onDepete = {item->
-                        deleteItemRequest = item
+                    onDelete = { item->
+                        itemToDelete = item.barcode
                     },
                     Modifier.weight(1f)
                 )

@@ -11,6 +11,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilledIconButton
@@ -35,11 +37,12 @@ fun RegisteredItemsContents(
     onRequestScan:(RegisteredItem?, RegisteredItem.PropertyType)-> Unit,
     onSetProperty:(RegisteredItem, RegisteredItem.PropertyType, String)->Unit,
     onRequestSelection:(RegisteredItem, RegisteredItem.PropertyType)->Unit,
-    onDepete:(RegisteredItem)->Unit,
+    onDelete:(RegisteredItem)->Unit,
     modifier: Modifier = Modifier) {
     var requestProperty by remember {mutableStateOf(RegisteredItem.PropertyType.Barcode)}
     var requestItem by remember {mutableStateOf<RegisteredItem?>(null)}
 
+    var deleteItem by remember{mutableStateOf<RegisteredItem?>(null)}
     if (requestItem != null) {
         SelectActionDialog(
             onClose = { requestItem = null },
@@ -60,6 +63,27 @@ fun RegisteredItemsContents(
                 },
         )
     }
+    deleteItem?.let{ item->
+        AlertDialog(
+            onDismissRequest = {deleteItem = null},
+            confirmButton = {
+                Button({
+                    onDelete(item)
+                    deleteItem = null
+                }){
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                Button({ deleteItem = null } ){
+                    Text("Dismiss")
+                }
+            },
+            icon = {Icon(Icons.Default.Warning, "")},
+            title = {Text("Delete Item")},
+            text = {Text("Delete '${deleteItem?.name?:deleteItem?.barcode}'?")}
+        )
+    }
 
     LazyColumn(modifier) {
         items(items = registeredItems, key = {item-> item.barcode}) { item->
@@ -70,7 +94,7 @@ fun RegisteredItemsContents(
                     requestItem = item
                 },
                 {
-                    onDepete(item)
+                    deleteItem = item
                 },
                 Modifier.padding(vertical = 4.dp))
         }
