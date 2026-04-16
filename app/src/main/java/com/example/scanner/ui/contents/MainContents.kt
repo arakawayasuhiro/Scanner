@@ -1,6 +1,5 @@
 package com.example.scanner.ui.contents
 
-import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +27,6 @@ import com.example.scanner.repository.RegisteredItems
 import com.example.scanner.ui.ScannerViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 
-private const val TAG = "ScannerApp"
 enum class ContentsMode {
     Scan,
     List,
@@ -74,7 +72,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
         }
     }
     LaunchedEffect(requestPropertyValue, requestPropertyType) {
-        Log.d(TAG, "LaunchEffect $requestPropertyValue, $requestPropertyType")
         if (requestPropertyValue != null) {
             targetItem?.run {
                 registeredItems.setItemProperty(barcode, requestPropertyType, requestPropertyValue!!)
@@ -85,7 +82,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
     }
 
     LaunchedEffect(itemToDelete) {
-        Log.d(TAG, "delete: '$itemToDelete'")
         itemToDelete?.let {barcode->
             registeredItems.deleteItemByBarcode(barcode)
             itemToDelete = null
@@ -102,7 +98,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                         contentsMode = ContentsMode.Scan
                     },
                     onSetProperty = { item, propertyType, newValue ->
-                        Log.d(TAG, "onSetProperty(${item.barcode}, $propertyType, $newValue")
                         targetItem = item
                         requestPropertyType = propertyType
                         requestPropertyValue = newValue
@@ -122,7 +117,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                 CameraScannerContents(
                     requestPropertyType,
                     onSelectBarcode = {text->
-                        Log.d(TAG, "onSelectBarcode:'$text'")
                         newItemFlow.value = text
                     },
                     onSelectText = {text->
@@ -143,7 +137,6 @@ fun MainContents(registeredItems: RegisteredItems, initialMode: ContentsMode, mo
                     propertyItems = propertyItemList,
                     onSelected = {propertyType, newValue->
                         targetItem?.run {
-                            Log.d(TAG, "onSetProperty(${barcode}, $propertyType, $newValue")
                             requestPropertyType = propertyType
                             requestPropertyValue = newValue
                         }

@@ -6,7 +6,6 @@ import androidx.camera.core.Camera
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.FocusMeteringAction
 import androidx.camera.core.ImageAnalysis
-import androidx.camera.core.MeteringPoint
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceOrientedMeteringPointFactory
 import androidx.camera.core.SurfaceRequest
@@ -32,13 +31,13 @@ enum class ScanMode {
 
 class DetectResult(val text:String, val area: Rect?)
 
-class CameraScanner {
-    private constructor()
+object CameraScanner {
     val scanMode = MutableLiveData<ScanMode>()
     val detectResult = MutableStateFlow(listOf<DetectResult>())
     private var meteringPointFactory: SurfaceOrientedMeteringPointFactory? = null
+    private var poi:Offset? = null
     val surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
-
+    var transformationInfo:SurfaceRequest.TransformationInfo? = null
     private val preview = Preview.Builder().build().apply {
         setSurfaceProvider {request ->
             surfaceRequest.value = request
@@ -47,6 +46,14 @@ class CameraScanner {
                     width.toFloat(),
                     height.toFloat()
                 )
+            }
+            try {
+                request.setTransformationInfoListener(Runnable::run){info->
+                    transformationInfo = info
+                }
+            }
+            finally {
+                request.clearTransformationInfoListener()
             }
         }
     }
@@ -122,6 +129,15 @@ class CameraScanner {
                 setFrom(imageProxy.imageInfo.sensorToBufferTransformMatrix)
                 invert()
             }
+            val b2sMatrix = transformationInfo?.let {
+                Matrix().apply {
+                    setFrom(it.sensorToBufferTransform)
+                    invert()
+                }
+            }
+            val poiOnSensor = poi?.let {
+                b2sMatrix?.map(it)
+            }
             val inputImage =
                 InputImage.fromBitmap(imageProxy.toBitmap(), 0)
             val recognizer = TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
@@ -130,10 +146,19 @@ class CameraScanner {
                 .addOnSuccessListener {text ->
                     val detected = mutableListOf<DetectResult>()
                     for(block in text.textBlocks) {
-                        detected.add(DetectResult(
-                            text = block.text,
-                            area = imageToSensorMatrix.map(block.boundingBox)
-                        ))
+                        val area = imageToSensorMatrix.map(block.boundingBox)
+                        var isPoi = true
+                        poiOnSensor?.let {offset->
+                            area?.run {
+                                isPoi = contains(offset)
+                            }
+                        }
+                        if (isPoi) {
+                            detected.add(DetectResult(
+                                text = block.text,
+                                area = area
+                            ))
+                        }
                     }
                     detectResult.value = detected
                 }
@@ -152,6 +177,9 @@ class CameraScanner {
         }
     }
 
+    fun clearPoi() {
+        poi = null
+    }
     fun toggleScanMode() {
         if (scanMode.value == ScanMode.Barcode) {
             startScanText()
@@ -159,20 +187,16 @@ class CameraScanner {
             startScanBarcode()
         }
     }
-    private fun surfaceOffsetToSensor(offset: Offset) : MeteringPoint? {
-        return meteringPointFactory?.createPoint(offset.x, offset.y)
-    }
 
     fun tapAt(offset: Offset) {
         camera?.cameraControl?.run {
-            val point = surfaceOffsetToSensor(offset)
+            val point = meteringPointFactory?.createPoint(offset.x, offset.y)
             point?.let {
                 val meteringAction = FocusMeteringAction.Builder(it).build()
                 startFocusAndMetering(meteringAction)
             }
         }
-
-        // TODO: set POI to Scanner
+        poi = offset
     }
 
     fun setZoom(zoom:Float) {
@@ -180,13 +204,6 @@ class CameraScanner {
             cameraInfo.zoomState.value?.let {zoomState->
                 cameraControl.setZoomRatio(zoomState.zoomRatio * zoom)
             }
-        }
-    }
-
-    companion object {
-        private val theInstance = CameraScanner()
-        fun getInstane(): CameraScanner {
-            return theInstance
         }
     }
 }

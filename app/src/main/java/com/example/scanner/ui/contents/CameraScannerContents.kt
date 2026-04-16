@@ -46,6 +46,7 @@ fun CameraScannerContents(
             request,
             viewModel.liveDetection,
             onTap = {offset-> viewModel.tapAt(offset)},
+            onLongPress = { viewModel.resetPoi()},
             onZoom = {zoom-> viewModel.setZoom(zoom)},
             modifier = Modifier
                 .padding(4.dp)

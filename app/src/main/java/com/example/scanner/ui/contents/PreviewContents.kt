@@ -12,12 +12,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.setFrom
 import androidx.compose.ui.input.pointer.pointerInput
@@ -29,9 +32,11 @@ fun PreviewContents(
     surfaceRequest: SurfaceRequest?,
     detected: List<DetectedItem>,
     onTap: (tapPoint: Offset)-> Unit,
+    onLongPress: (pressPoint: Offset)-> Unit,
     onZoom: (zoomRate:Float)->Unit,
     modifier: Modifier = Modifier){
-    val uiToBufferTransformer = remember { MutableCoordinateTransformer() }
+    var poi by remember{mutableStateOf<Offset?>(null)}
+    val viewToImageTransformer = remember { MutableCoordinateTransformer() }
     val surfaceTransformationInfo by
     produceState<SurfaceRequest.TransformationInfo?>(null, surfaceRequest) {
         try {
@@ -47,22 +52,27 @@ fun PreviewContents(
         if (surfaceRequest != null) {
             CameraXViewfinder(
                 surfaceRequest = surfaceRequest,
-                coordinateTransformer = uiToBufferTransformer,
+                coordinateTransformer = viewToImageTransformer,
                 modifier = Modifier
                     .fillMaxSize()
-                    .pointerInput(onTap) {
-                        detectTapGestures { offset ->
-                            val sensorOffset = with(uiToBufferTransformer) {
+                    .pointerInput(onTap, onLongPress) {
+                        detectTapGestures(onLongPress = {offset->
+                            onLongPress(offset)
+                            poi = null
+                        }) { offset ->
+                            poi = offset
+                            val imageOffset = with(viewToImageTransformer) {
                                 offset.transform()
                             }
-                            onTap(sensorOffset)
+                            onTap(imageOffset)
                         }
                     }
                     .pointerInput(onZoom) {
                         detectTransformGestures { _, _, zoom, _ ->
                             onZoom(zoom)
                         }
-                    })
+                    }
+            )
         } else {
             Box(modifier = modifier) {
                 Text(
@@ -74,8 +84,24 @@ fun PreviewContents(
         }
 
         Canvas(Modifier.fillMaxSize()) {
+            poi?.let {
+                val radius = 40f
+                drawCircle(
+                    color = Color.Green,
+                    radius = radius,
+                    center = it,
+                    alpha = 0.2f,
+                    style = Fill
+                    )
+                drawCircle(
+                    color = Color.Green,
+                    radius = radius,
+                    center = it,
+                    style = Stroke(radius / 8f)
+                )
+            }
             val bufToUi = Matrix().apply {
-                setFrom(uiToBufferTransformer.transformMatrix)
+                setFrom(viewToImageTransformer.transformMatrix)
                 invert()
             }
 

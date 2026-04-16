@@ -16,10 +16,11 @@ import kotlinx.coroutines.launch
 class DetectedItem(val text:String, var area:Rect?, var count:Int)
 
 class ScannerViewModel: ViewModel() {
-    private val cameraScanner = CameraScanner.getInstane()
+    private val cameraScanner = CameraScanner
     private val reportedItems = mutableStateListOf<DetectedItem>()
     val detectedItems = mutableStateListOf<DetectedItem>()
     val liveDetection = mutableStateListOf<DetectedItem>()
+
 
     var scanMode = cameraScanner.scanMode
     val surfaceRequest: StateFlow<SurfaceRequest?> = cameraScanner.surfaceRequest
@@ -58,6 +59,9 @@ class ScannerViewModel: ViewModel() {
             reportedItems.clear()
             detectedItems.clear()
         }
+    }
+    fun resetPoi() {
+        cameraScanner.clearPoi()
     }
     fun tapAt(offset: Offset) {
         cameraScanner.tapAt(offset)
