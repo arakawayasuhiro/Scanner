@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
                             Text("Not Granted")
                         }
                     ) {
-                        MainContents(registeredItems, ContentsMode.Scan, Modifier.padding(innerPadding))
+                         MainContents(registeredItems, ContentsMode.Scan, Modifier.padding(innerPadding))
                     }
                 }
             }
